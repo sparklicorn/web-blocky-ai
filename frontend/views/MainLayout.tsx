@@ -1,31 +1,32 @@
-import { AppLayout } from '@hilla/react-components/AppLayout.js';
-import { DrawerToggle } from '@hilla/react-components/DrawerToggle.js';
-import { Item } from '@hilla/react-components/Item.js';
-import { Scroller } from '@hilla/react-components/Scroller.js';
-import Placeholder from 'Frontend/components/placeholder/Placeholder.js';
-import { MenuProps, routes, useViewMatches, ViewRouteObject } from 'Frontend/routes.js';
-import { Suspense } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import css from './MainLayout.module.css';
+import { AppLayout } from '@hilla/react-components/AppLayout';
+// import { DrawerToggle } from '@hilla/react-components/DrawerToggle';
+// import { Item } from '@hilla/react-components/Item';
+// import { Scroller } from '@hilla/react-components/Scroller';
+// import Placeholder from 'Frontend/components/placeholder/Placeholder';
+// import { MenuProps, routes, useViewMatches, ViewRouteObject } from 'Frontend/routes';
+// import { Suspense } from 'react';
+// import { NavLink, Outlet } from 'react-router-dom';
+import TetrisAiView from './tetris-ai/TetrisAiView';
+// import css from './MainLayout.module.css';
 
-type MenuRoute = ViewRouteObject &
-  Readonly<{
-    path: string;
-    handle: Required<MenuProps>;
-  }>;
+// type MenuRoute = ViewRouteObject &
+//   Readonly<{
+//     path: string;
+//     handle: Required<MenuProps>;
+//   }>;
 
 export default function MenuOnLeftLayout() {
-  const matches = useViewMatches();
+  // const matches = useViewMatches();
 
-  const currentTitle = matches[matches.length - 1]?.handle?.title ?? 'Unknown';
+  // const currentTitle = matches[matches.length - 1]?.handle?.title ?? 'Unknown';
 
-  const menuRoutes = (routes[0]?.children || []).filter(
-    (route) => route.path && route.handle && route.handle.icon && route.handle.title
-  ) as readonly MenuRoute[];
+  // const menuRoutes = (routes[0]?.children || []).filter(
+  //   (route) => route.path && route.handle && route.handle.icon && route.handle.title
+  // ) as readonly MenuRoute[];
 
   return (
-    <AppLayout className="block h-full" primarySection="drawer">
-      <header slot="drawer">
+    <AppLayout className="block h-full m-l" /*primarySection="drawer"*/>
+      {/* <header slot="drawer">
         <h1 className="text-l m-0">My App</h1>
       </header>
       <Scroller slot="drawer" scroll-direction="vertical">
@@ -63,9 +64,11 @@ export default function MenuOnLeftLayout() {
         {currentTitle}
       </h2>
 
-      <Suspense fallback={<Placeholder />}>
-        <Outlet />
-      </Suspense>
+      <Suspense fallback={<Placeholder />}> */}
+        {/* <Outlet />
+      </Suspense> */}
+
+      <TetrisAiView />
     </AppLayout>
   );
 }
