@@ -6,6 +6,12 @@ import TetrisState from './TetrisState';
 import ZMod from './ZMod';
 
 export default class Piece {
+  /**
+   * Copies of the given piece.
+   *
+   * @param other The piece to copy.
+   * @returns A copy of the given piece.
+   */
   static copy(other: Piece): Piece {
     const copy = new Piece(other.position.location, other.shape);
     copy._position = Position.copy(other.position);
@@ -39,11 +45,10 @@ export default class Piece {
    * @param location The location to reset the piece to.
    * @param shape The shape to reset the piece to.
    */
-  reset(location: { row: number, col: number }, shape: Shape): void {
-    this._shape = shape;
-    this._position = new Position(location, 0, shape.numRotations);
+  reset(location: Coord, shape: Shape): void {
     this._isActive = true;
-    this._updateBlockCoords();
+    this._position.set(location);
+    this.shape = shape;
   }
 
   /**
@@ -55,47 +60,27 @@ export default class Piece {
 
   /**
    * Sets the shape of the piece and updates the block coordinates.
+   * The rotation will be reset to the default state for the shape.
    *
    * @param shape The new shape of the piece.
    * @return The new shape of the piece.
    */
   set shape(shape: Shape) {
     this._shape = shape;
+    this._position.rotation = 0;
+    this._position.maxRotation = shape.numRotations;
     this._updateBlockCoords();
   }
 
   /**
-   * Returns the position of the piece.
+   * Gets a copy of the current position of the piece.
    */
   get position(): Position {
     return Position.copy(this._position);
   }
 
   /**
-   * Sets the position of the piece and updates the block coordinates.
-   *
-   * @param position The new position of the piece.
-   * @return The new position of the piece.
-   */
-  set position(newPosition: Position) {
-    // Validate newPosition must have the same max rotation as the current position
-    if (newPosition.maxRotation !== this._position.maxRotation) {
-      throw new Error(`Invalid position: max rotation must be ${this._position.maxRotation}`);
-    }
-
-    this._position = Position.copy(newPosition);
-    this._updateBlockCoords();
-  }
-
-  shapeShift(shape: Shape): void {
-    this._shape = shape;
-    // TODO using current position may result in invalid position once shape is changed
-    this._position = new Position(this._position.offset, 0, shape.numRotations);
-    this._updateBlockCoords();
-  }
-
-  /**
-   * Returns whether or not the piece is active.
+   * Gets whether or not the piece is active.
    */
   get isActive() {
     return this._isActive;
@@ -116,7 +101,7 @@ export default class Piece {
   }
 
   /**
-   * Returns a copy of the block coordinates of the piece.
+   * Gets a copy of the block coordinates of the piece.
    */
   get blockCoords(): Coord[] {
     return Coord.copyAll(this._blockCoords);
@@ -141,15 +126,6 @@ export default class Piece {
    */
   intersects(state: TetrisState): boolean {
     return this._blockCoords.some(coord => !state.isCellEmpty(coord));
-  }
-
-  /**
-   * Executes the given consumer for each block (row, column) coordinates of the piece.
-   *
-   * @param consumer The consumer to execute for each block (row, column) coordinates of the piece.
-   */
-  forEachCell(consumer: ((coord: Coord) => void)): void {
-    this.blockCoords.forEach(consumer);
   }
 
   /**
