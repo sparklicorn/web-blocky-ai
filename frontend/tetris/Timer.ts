@@ -1,24 +1,40 @@
 export default class Timer {
-  private _enabled: boolean;
-  private _tickCount: number;
-  private _lastTick: number;
-  private _running: boolean;
-  private _delay: number;
-  private _repeats: boolean;
+  static readonly DEFAULT_DELAY_MS = 1000;
+
+  private static _validateNonNegative(value: number, name: string): void {
+    if (value < 0) {
+      throw new Error(`${name} must be non-negative`);
+    }
+  }
+
+  private static _validatePositive(value: number, name: string): void {
+    if (value <= 0) {
+      throw new Error(`${name} must be positive`);
+    }
+  }
+
+  private static _now(): number {
+    return performance.now() || Date.now();
+  }
+
+  private _tickCount: number = 0;
+  private _lastTick: number = 0;
+  private _running: boolean = false;
+  private _delay: number = Timer.DEFAULT_DELAY_MS;
+  private _repeats: boolean = true;
   private _runnable: () => void;
 
+  /**
+   * Creates a new Timer with the given runnable.
+   *
+   * @param runnable The function to run on each tick.
+   */
   constructor(runnable: () => void) {
-    this._enabled = true;
-    this._tickCount = 0;
-    this._lastTick = 0;
-    this._running = false;
-    this._delay = 1000;
-    this._repeats = true;
     this._runnable = runnable;
   }
 
   private _tick(timeStamp: number): void {
-    if (this.disabled || !this.isRunning) {
+    if (!this.isRunning) {
       return;
     }
 
@@ -35,70 +51,103 @@ export default class Timer {
     }
 
     if (this._repeats || this._tickCount < 1) {
-      requestAnimationFrame(this._tick.bind(this));
+      window.requestAnimationFrame(this._tick.bind(this));
       return;
     }
 
     this.stop();
   }
 
-  get enabled() {
-    return this._enabled;
-  }
-
-  get disabled() {
-    return !this._enabled;
-  }
-
+  /**
+   * Gets whether the timer is currently running.
+   */
   get isRunning() {
     return this._running;
   }
 
+  /**
+   * Gets the time in milliseconds between ticks.
+   */
   get delay() {
     return this._delay;
   }
 
+  /**
+   * Sets the time in milliseconds between ticks.
+   */
   set delay(delayMs: number) {
-    if (delayMs < 0) {
-      throw new Error('delay must be non-negative');
-    }
-
+    Timer._validatePositive(delayMs, 'delay');
     this._delay = delayMs;
   }
 
-  enable(): void {
-    this._enabled = true;
+  /**
+   * Gets the function that is run on each tick.
+   */
+  get runnable() {
+    return this._runnable;
   }
 
-  disable(): void {
-    this._enabled = false;
+  /**
+   * Sets the function that is run on each tick.
+   *
+   * @throws If the timer is currently running.
+   */
+  set runnable(runnable: () => void) {
+    if (this.isRunning) {
+      throw new Error('Cannot set runnable while timer is running');
+    }
+
+    this._runnable = runnable;
   }
 
-  resetTickDelay(): void {
-    this._lastTick = performance.now() || Date.now();
+  /**
+   * Delays the next tick by the given number of milliseconds.
+   *
+   * @param delayMs The number of milliseconds to delay the next tick.
+   * Defaults to {@link Timer.DEFAULT_DELAY_MS}.
+   */
+  delayNextTick(delayMs: number = Timer.DEFAULT_DELAY_MS): void {
+    this._lastTick = Timer._now() + delayMs;
   }
 
+  /**
+   * Stops the timer.
+   */
   stop(): void {
     this._running = false;
   }
 
-  start(initialDelayMs: number = 0, delayMs: number = this._delay, repeats: boolean = true): void {
-    console.log(`Timer.start(${initialDelayMs}, ${delayMs}, ${repeats})`);
-
-
-    if (initialDelayMs < 0) {
-      throw new Error('initialDelay must be non-negative');
-    }
-
-    if (this.disabled || this.isRunning) {
+  /**
+   * Starts the timer.
+   * If the timer is already running, this method does nothing.
+   *
+   * @param delayMs (default: last delay used or {@link Timer.DEFAULT_DELAY_MS}) The number of milliseconds between ticks.
+   * @param initialDelayMs (default: last delay used or {@link Timer.DEFAULT_DELAY_MS}) The number of milliseconds to wait before the first tick.
+   * @param repeats (default: true) Whether the timer should repeat after the first tick.
+   * @throws If initialDelayMs is negative or delayMs is not positive.
+   */
+  start(
+    delayMs: number = this._delay,
+    initialDelayMs: number = this._delay,
+    repeats: boolean = true
+  ): void {
+    if (this.isRunning) {
       return;
     }
 
-    this._delay = delayMs;
+    Timer._validateNonNegative(initialDelayMs, 'initialDelayMs');
+
+    // Handles validation of delay
+    this.delay = delayMs;
+
     this._repeats = repeats;
     this._tickCount = 0;
     this._lastTick = 0;
     this._running = true;
-    this._tick((performance.now() || Date.now()) + initialDelayMs);
+    const nextTick = (
+      Timer._now() +
+      (initialDelayMs >= 0 ? initialDelayMs : delayMs)
+    );
+    this._tick(nextTick);
   }
 }

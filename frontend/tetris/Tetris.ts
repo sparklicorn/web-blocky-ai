@@ -13,6 +13,7 @@ export default class Tetris {
 
   protected _state: TetrisState;
   protected eventBus: EventBus | null = null;
+	protected usingGravity: boolean = true;
   protected gravityTimer: Timer;
   protected numTimerPushbacks: number = 0;
   protected ticksUntilNextGravity: number = 0;
@@ -134,7 +135,7 @@ export default class Tetris {
 	 * Returns whether the game has gravity enabled.
 	 */
 	isGravityEnabled(): boolean {
-		return this.gravityTimer.enabled;
+		return this.usingGravity;
 	}
 
 	/**
@@ -142,7 +143,8 @@ export default class Tetris {
 	 */
 	protected disableGravity(): void {
 		if (this.isGravityEnabled()) {
-			this.gravityTimer.disable();
+			this.usingGravity = false;
+			this.gravityTimer.stop();
 			this.throwEvent(TetrisEvent.GRAVITY_DISABLED());
 		}
 	}
@@ -152,13 +154,13 @@ export default class Tetris {
 	 */
 	protected enableGravity(): void {
 		if (!this.isGravityEnabled()) {
-      this.gravityTimer.enable();
+			this.usingGravity = true;
+      // this.gravityTimer.enable();
       this.throwEvent(TetrisEvent.GRAVITY_ENABLED());
 		}
 
-    this.gravityTimer.delay = this.gravityDelayMsForLevel();
     if (this._state.hasStarted && !this._state.isGameOver && !this._state.isPaused) {
-      this.gravityTimer.start();
+      this.gravityTimer.start(this.gravityDelayMsForLevel());
     }
 	}
 
@@ -363,8 +365,7 @@ export default class Tetris {
 		if (this._state.hasStarted && !this._state.isGameOver) {
 			this._state.isPaused = false;
 			if (this.isGravityEnabled()) {
-        this.gravityTimer.delay = this.gravityDelayMsForLevel();
-				this.gravityTimer.start();
+				this.gravityTimer.start(this.gravityDelayMsForLevel());
 			}
 			this.throwEvent(TetrisEvent.RESUME());
 		}
@@ -424,7 +425,7 @@ export default class Tetris {
 					this.updateGravityTimerDelayMs();
 				}
 
-				this.gravityTimer.resetTickDelay();
+				this.gravityTimer.delayNextTick();
 			}
 
 			// this.throwEvent(TetrisEvent.PIECE_SHIFT(this));
