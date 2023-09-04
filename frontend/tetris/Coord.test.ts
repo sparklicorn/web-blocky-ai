@@ -99,6 +99,10 @@ describe('Coord', () => {
           expect(Coord.prototype.addCoord).toHaveBeenNthCalledWith(n, Coord.UP);
         });
       });
+
+      test('returns the array', () => {
+        expect(Coord.offsetAll(source, Coord.UP)).toBe(source);
+      });
     });
   });
 
