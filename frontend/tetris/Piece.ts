@@ -3,6 +3,7 @@ import Move from './Move';
 import Position from './Position';
 import { Shape } from './Shape';
 import TetrisState from './TetrisState';
+import ZMod from './ZMod';
 
 export default class Piece {
   static copy(other: Piece): Piece {
@@ -156,7 +157,7 @@ export default class Piece {
    * This method is called automatically when the position or shape is changed.
    */
   private _updateBlockCoords(): void {
-    const rotationIndex = this._shape.rotationIndex(this._position.rotation);
+    const rotationIndex = ZMod.apply(this._position.rotation, this._shape.numRotations);
 
     for (let i = 0; i < this._blockCoords.length; i++) {
       this._blockCoords[i].reset(this._position.offset);

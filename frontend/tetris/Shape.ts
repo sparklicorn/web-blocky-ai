@@ -1,4 +1,5 @@
 import Coord from './Coord';
+import ZMod from './ZMod';
 
 export class Shape {
   static readonly O = new Shape(1, [
@@ -51,12 +52,8 @@ export class Shape {
     return this._offsets.length;
   }
 
-  rotationIndex(rotations: number): number {
-    return ((rotations % this.numRotations) + this.numRotations) % this.numRotations;
-  }
-
-  getRotation(rotationIndex: number): Coord[] {
-    return this._offsets[rotationIndex];
+  getRotation(rotation: number): Coord[] {
+    return this._offsets[ZMod.apply(rotation, this.numRotations)];
   }
 
   private buildOffsets(vals: number[]): Coord[][] {
