@@ -29,8 +29,9 @@ export default class Coord {
 	/**
 	 * Adds the given offset to all Coords in the array.
 	 */
-	static offsetAll(coords: Coord[], offset: Coord) {
+	static offsetAll(coords: Coord[], offset: Coord): Coord[] {
 		coords.forEach(coord => coord.addCoord(offset));
+		return coords;
 	}
 
 	private _val: number[];
