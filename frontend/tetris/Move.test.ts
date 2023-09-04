@@ -146,6 +146,33 @@ describe('Move', () => {
     });
   });
 
+  describe('set', () => {
+    let offset: Coord;
+    let rotation: number;
+
+    beforeEach(() => {
+      offset = new Coord(4, 5);
+      rotation = 6;
+    });
+
+    test('sets the offset and rotation', () => {
+      move.set(offset, rotation);
+      expect(move.offset).toEqual(offset);
+      expect(move.offset).not.toBe(offset);
+      expect(move.rotation).toBe(rotation);
+    });
+
+    test('returns itself', () => {
+      expect(move.set(offset, rotation)).toBe(move);
+    });
+
+    test('throws an error if frozen', () => {
+      expect(() => {
+        move.freeze().set(offset, rotation);
+      }).toThrowError();
+    });
+  });
+
   describe('shift', () => {
     test('adds the offset', () => {
       move.shift(new Coord(1, 2));

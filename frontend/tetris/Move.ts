@@ -104,6 +104,27 @@ export default class Move {
   }
 
   /**
+   * Sets the offset and rotation of this Move.
+   *
+   * @param offset The new offset.
+   * @param rotation The new rotation.
+   * @returns This Move.
+   */
+  set(offset?: Coord, rotation?: number): Move {
+    this._validateFrozen();
+
+    if (offset) {
+      this._offset.reset(offset);
+    }
+
+    if (rotation) {
+      this._rotation = rotation;
+    }
+
+    return this;
+  }
+
+  /**
    * Shifts this Move by the given offset.
    *
    * @param offset The offset to shift by
