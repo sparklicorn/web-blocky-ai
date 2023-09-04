@@ -1,5 +1,6 @@
 import Coord from './Coord';
 import Move from './Move';
+import ZMod from './ZMod';
 
 export default class Position extends Move {
   static readonly ERR_FROZEN: string = 'Cannot modify frozen Position';
@@ -164,9 +165,7 @@ export default class Position extends Move {
 	}
 
   private _normalizeRotation(): void {
-    if (this._rotation < 0 || this._rotation >= this._maxRotation) {
-      this._rotation = ((this._rotation % this._maxRotation) + this._maxRotation) % this._maxRotation;
-    }
+    this._rotation = ZMod.apply(this._rotation, this._maxRotation);
   }
 
   private _validateMaxRotation(maxRotation: number): number {
