@@ -4,13 +4,21 @@ import Piece from './Piece';
 import Position from './Position';
 import { SHAPES, Shape } from './Shape';
 import ShapeQueue from './ShapeQueue';
+import { bounded, validateInteger, validatePositive } from './Util';
 
 export default class TetrisState {
+	// TODO experiment with different values
+	static readonly MIN_ROWS = 5;
+	static readonly MIN_COLS = 5;
+	static readonly MAX_ROWS = 100;
+	static readonly MAX_COLS = 100;
+
   static readonly DEFAULT_NUM_ROWS = 20;
 	static readonly DEFAULT_NUM_COLS = 10;
+  static readonly DEFAULT_LINES_PER_LEVEL = 10;
+
 	static readonly DEFAULT_ENTRY_COLUMN = TetrisState.calcEntryColumn(TetrisState.DEFAULT_NUM_COLS);
   static readonly DEFAULT_ENTRY_COORD = new Coord(1, TetrisState.DEFAULT_ENTRY_COLUMN);
-  static readonly DEFAULT_LINES_PER_LEVEL = 10;
 
   // TODO default points per line cleared
 
@@ -21,7 +29,39 @@ export default class TetrisState {
 	 * @param cols Number of columns on the board.
 	 */
 	static calcEntryColumn(cols : number) {
-		return (cols / 2) - ((cols % 2 == 0) ? 1 : 0);
+		validateInteger(cols, 'cols');
+		validatePositive(cols, 'cols');
+		const _cols = bounded(TetrisState.MIN_COLS, TetrisState.MAX_COLS, cols);
+
+		return Math.floor(_cols / 2) - ((_cols % 2 === 0) ? 1 : 0);
+	}
+
+	/**
+	 * Creates a new TetrisState with the same values as the given TetrisState.
+	 */
+	static copy(other: TetrisState): TetrisState {
+    const copy = new TetrisState(
+      other.rows,
+      other.cols,
+      other.entryCoord,
+      other._linesPerLevel
+    );
+
+		copy._board = other._board.slice();
+		copy._isGameOver = other.isGameOver;
+		copy._isPaused = other.isPaused;
+		copy._isClearingLines = other.isClearingLines;
+		copy._hasStarted = other.hasStarted;
+		copy._level = other.level;
+		copy._score = other.score;
+		copy._linesCleared = other.linesCleared;
+		copy._numPiecesDropped = other.numPiecesDropped;
+		copy._linesUntilNextLevel = other.linesUntilNextLevel;
+		copy._dist = other._dist.slice();
+		copy._nextShapes = ShapeQueue.copy(other._nextShapes);
+		copy._piece = Piece.copy(other._piece);
+
+    return copy;
 	}
 
   readonly rows: number;
@@ -55,9 +95,10 @@ export default class TetrisState {
     entryCoord: Coord = TetrisState.DEFAULT_ENTRY_COORD,
     linesPerLevel: number | ((level: number) => number) = TetrisState.DEFAULT_LINES_PER_LEVEL
   ) {
-		// Tetris.ROWS_VALIDATOR.validate(rows);
-		// Tetris.COLS_VALIDATOR.validate(cols);
-    // TODO validate inputs
+		validateInteger(rows, 'rows');
+		validateInteger(cols, 'cols');
+		validatePositive(rows, 'rows');
+		validatePositive(cols, 'cols');
 
 		this.rows = rows;
 		this.cols = cols;
@@ -76,35 +117,12 @@ export default class TetrisState {
 		this._linesUntilNextLevel = 0;
 		this._dist = Array(SHAPES.length).fill(0);
 		this._nextShapes = new ShapeQueue();
-		this._piece = new Piece(this.entryCoord, this._nextShapes.poll());
-	}
 
-	/**
-	 * Creates a new TetrisState with the same values as the given TetrisState.
-	 */
-	static copy(other: TetrisState): TetrisState {
-    const copy = new TetrisState(
-      other.rows,
-      other.cols,
-      other.entryCoord,
-      other._linesPerLevel
-    );
-
-		copy._board = other._board.slice();
-		copy._isGameOver = other.isGameOver;
-		copy._isPaused = other.isPaused;
-		copy._isClearingLines = other.isClearingLines;
-		copy._hasStarted = other.hasStarted;
-		copy._level = other.level;
-		copy._score = other.score;
-		copy._linesCleared = other.linesCleared;
-		copy._numPiecesDropped = other.numPiecesDropped;
-		copy._linesUntilNextLevel = other.linesUntilNextLevel;
-		copy._dist = other._dist.slice();
-		copy._nextShapes = ShapeQueue.copy(other._nextShapes);
-		copy._piece = Piece.copy(other._piece);
-
-    return copy;
+		const shape = this._nextShapes.poll();
+		this._piece = new Piece(
+			new Position(this.entryCoord, 0, shape.numRotations),
+			shape
+		);
 	}
 
   /**
@@ -144,6 +162,13 @@ export default class TetrisState {
   }
 
 	/**
+	 * Gets the next shape in the queue.
+	 */
+	getNextShape(): Shape {
+		return this._nextShapes.peek();
+	}
+
+	/**
 	 * Peeks the given number of shapes in the queue.
 	 *
 	 * @param numShapes Number of shapes to peek.
@@ -158,8 +183,13 @@ export default class TetrisState {
 	 *
 	 * @param location The location of the cell to set.
 	 * @param value The value to set the cell to.
+	 * @throws Error if the given location is out of bounds.
 	 */
-	setCell(location: {row: number, col: number}, value: number): void {
+	setCell(location: Coord, value: number): void {
+		if (!this.isLocationValid(location)) {
+			throw new Error(`Location ${location.toString()} is out of bounds`);
+		}
+
     this._board[location.row * this.cols + location.col] = value;
 	}
 
@@ -168,15 +198,24 @@ export default class TetrisState {
 	 *
 	 * @param location The location of the cell to get.
 	 * @return The value of the cell at the given location.
+	 * @throws Error if the given location is out of bounds.
 	 */
-	getCell(location: { row: number, col: number }): number {
+	getCell(location: Coord): number {
+		if (!this.isLocationValid(location)) {
+			throw new Error(`Location ${location.toString()} is out of bounds`);
+		}
+
     return this._board[location.row * this.cols + location.col];
 	}
 
 	/**
 	 * Checks whether the specified cell is empty.
+	 *
+	 * @param location The location of the cell to check.
+	 * @return True if the cell is empty; false otherwise.
+	 * @throws Error if the given location is out of bounds.
 	 */
-	isCellEmpty(location: { row: number, col: number }): boolean {
+	isCellEmpty(location: Coord): boolean {
 		return this.getCell(location) === 0;
 	}
 
@@ -187,7 +226,7 @@ export default class TetrisState {
 	 * @param col The column to check.
 	 * @return True if the coordinates are valid; false otherwise.
 	 */
-	validateCoord(location: { row: number, col: number }): boolean {
+	isLocationValid(location: Coord): boolean {
 		return (
 			location.row >= 0 &&
 			location.row < this.rows &&
@@ -201,8 +240,8 @@ export default class TetrisState {
 	 *
 	 * @return True if the piece is in bounds; false otherwise.
 	 */
-	pieceInBounds() {
-    return this._piece.blockCoords.every(this.validateCoord);
+	isCurrentPieceLocationValid(): boolean {
+    return this.isPositionValid(this._piece.position);
 	}
 
 	/**
@@ -223,9 +262,11 @@ export default class TetrisState {
 			maxCol = Math.max(maxCol, c.col);
 
 			if (
-				!this.validateCoord(c) ||
+				!this.isLocationValid(c) ||
 				!this.isCellEmpty(c) ||
 
+				// TODO May not be necessary anymore when using Coord
+				// TODO because cols will just be negative instead of wrapping around.
 				// A large gap between cell columns means the piece wrapped around the board.
 				(maxCol - minCol) > 4
 			) {
@@ -300,7 +341,7 @@ export default class TetrisState {
 	 * @return An array of coordinates for the blocks of the shape at the given position.
 	 */
 	getShapeCoordsAtPosition(position: Position): Coord[] {
-		return new Piece(position.location, this.piece.shape).blockCoords;
+		return new Piece(position, this.piece.shape).blockCoords;
 	}
 
 	/**
@@ -311,7 +352,8 @@ export default class TetrisState {
 	 */
 	protected isRowFull(row: number): boolean {
 		for (let col = 0; col < this.cols; col++) {
-			if (this.isCellEmpty({ row, col })) {
+			// TODO get rid of wasteful instantiations
+			if (this.isCellEmpty(new Coord(row, col))) {
 				return false;
 			}
 		}
@@ -375,6 +417,7 @@ export default class TetrisState {
 
 	/**
 	 * Returns whether the game has started and is in progress.
+	 * TODO determine whether this should also take into account pausing
 	 */
 	isRunning(): boolean {
 		return this.hasStarted && !this.isGameOver;
