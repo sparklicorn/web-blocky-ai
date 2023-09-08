@@ -23,4 +23,4 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Builds pass (JDK 17)
-      run: ./mvnw -B package
+      run: ./mvnw -B package -Pproduction
