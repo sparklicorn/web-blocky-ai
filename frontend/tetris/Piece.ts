@@ -13,7 +13,7 @@ export default class Piece {
    * @returns A copy of the given piece.
    */
   static copy(other: Piece): Piece {
-    const copy = new Piece(other.position.location, other.shape);
+    const copy = new Piece(other.position, other.shape);
     copy._position = Position.copy(other.position);
     copy._isActive = other.isActive;
     copy._blockCoords = other.blockCoords;
@@ -31,9 +31,10 @@ export default class Piece {
    * @param location The location of the piece.
    * @param shape The shape of the piece.
    */
-  constructor(location: Coord, shape: Shape) {
+  constructor(location: Position, shape: Shape) {
     this._shape = shape;
-    this._position = new Position(location, 0, shape.numRotations);
+    this._position = Position.copy(location);
+    this._position.maxRotation = shape.numRotations;
     this._isActive = true;
     this._blockCoords = Array(4).fill(null).map(() => new Coord(0, 0));
     this._updateBlockCoords();

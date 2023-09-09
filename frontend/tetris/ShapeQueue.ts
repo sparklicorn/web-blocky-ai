@@ -1,4 +1,5 @@
 import { SHAPES, Shape } from './Shape';
+import { range, shuffle } from './Util';
 
 export default class ShapeQueue {
   static readonly DEFAULT_SIZE = 14;
@@ -98,36 +99,6 @@ export default class ShapeQueue {
 /**
  * Returns an array of shape indices in random order.
  */
-const randomizeShapeIndices = (): number[] => {
+export const randomizeShapeIndices = (): number[] => {
   return shuffle(range(1, SHAPES.length));
-};
-
-/**
- * Shuffles the given array in place using the Fisher-Yates algorithm.
- */
-const shuffle = (arr: any[]): any[] => {
-  for (let i = arr.length - 1; i > 0; i--) {
-    swap(arr, i, Math.floor(Math.random() * (i + 1)));
-  }
-  return arr;
-};
-
-/**
- * Swaps the elements at the given indices in the given array.
- */
-const swap = (arr: any[], i: number, j: number): void => {
-  const temp = arr[i];
-  arr[i] = arr[j];
-  arr[j] = temp;
-};
-
-/**
- * Returns an array of numbers from start to end, inclusive.
- */
-const range = (start: number, end: number): number[] => {
-  const result = [];
-  for (let i = start; i <= end; i++) {
-    result.push(i);
-  }
-  return result;
 };

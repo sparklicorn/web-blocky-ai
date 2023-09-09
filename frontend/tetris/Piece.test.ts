@@ -1,6 +1,7 @@
 import Coord from "./Coord";
 import Move from "./Move";
 import Piece from "./Piece";
+import Position from "./Position";
 import { Shape } from "./Shape";
 import TetrisState from "./TetrisState";
 import ZMod from "./ZMod";
@@ -13,7 +14,10 @@ describe('Piece', () => {
   beforeEach(() => {
     initialShape = Shape.O;
     initialLocation = new Coord(0, 1);
-    piece = new Piece(initialLocation, initialShape);
+    piece = new Piece(
+      new Position(initialLocation, 0, initialShape.numRotations),
+      initialShape
+    );
   });
 
   describe('static copy', () => {
