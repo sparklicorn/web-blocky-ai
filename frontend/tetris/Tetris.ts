@@ -45,6 +45,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
   /**
 	 * Attempts to rotate the current piece clockwise.
 	 * The piece may be shifted left or right to accomodate the rotation.
+	 * TODO Clean up / consolidate the several rotation methods.
 	 *
 	 * @param move The rotation to attempt.
 	 * Should be either Move.CLOCKWISE or Move.COUNTERCLOCKWISE.
@@ -81,6 +82,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 
 	/**
 	 * Plots the piece's block data to the board.
+	 * TODO Make public
 	 */
 	protected plotPiece(): void {
 		this._state.placePiece();
@@ -143,7 +145,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	/**
 	 * Disables gravity if it is currently enabled.
 	 */
-	protected disableGravity(): void {
+	disableGravity(): void {
 		if (this.isGravityEnabled()) {
 			this.usingGravity = false;
 			this.gravityTimer.stop();
@@ -154,7 +156,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	/**
 	 * Enables gravity if it is currently disabled.
 	 */
-	protected enableGravity(): void {
+	enableGravity(): void {
 		if (!this.isGravityEnabled()) {
 			this.usingGravity = true;
       // this.gravityTimer.enable();
@@ -211,7 +213,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	 * If gravity is being used, this method is called automatically by the gravity timer.
 	 * Otherwise, this method must be called manually.
 	 */
-	public gameloop(): void {
+	gameloop(): void {
 		if (this._state.isGameOver || this._state.isPaused) {
 			return;
 		}
@@ -300,7 +302,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		this.throwEvent(TetrisEvent.RESET(this));
 	}
 
-	start(level: number, useGravity: boolean): void {
+	start(level: number = 0, useGravity: boolean = true): void {
 		if (this._state.hasStarted) {
 			return;
 		}
@@ -414,6 +416,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		return this.handleRotation(Move.COUNTERCLOCKWISE);
 	}
 
+	// TODO Clean up / consolidate the couple shift methods.
 	shift(rowOffset: number, colOffset: number): boolean {
 		const move = new Move(new Coord(rowOffset, colOffset), 0);
 		if (this.shiftPiece(move)) {
