@@ -1,4 +1,8 @@
 target/
+.m2/
+
+.env
+env.properties
 
 # The following files are generated/updated by Hilla
 node_modules/
