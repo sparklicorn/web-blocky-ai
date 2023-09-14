@@ -30,11 +30,11 @@ export const useViewMatches = useMatches as () => readonly ViewRouteMatch[];
 
 export const routes: readonly ViewRouteObject[] = [
   {
-    element: <MainLayout />,
-    handle: { icon: 'null', title: 'Main' },
+    path: '/',
     children: [
-      { path: '/', element: <HelloReactView />, handle: { icon: 'globe-solid', title: 'Hello React' } },
-      { path: '/about', element: <AboutView />, handle: { icon: 'file', title: 'About' } },
+      { index: true, element: <MainLayout /> },
+      { path: '/users', element: <HelloReactView /> },
+      { path: '/about', element: <AboutView /> },
     ],
   },
 ];

@@ -1,6 +1,5 @@
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-// import App from './App';
-import MainLayout from './views/MainLayout';
+import App from './App';
 
-createRoot(document.getElementById('app')!).render(createElement(MainLayout));
+createRoot(document.getElementById('app')!).render(createElement(App));
