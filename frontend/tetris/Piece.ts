@@ -1,9 +1,9 @@
-import Coord from './Coord';
-import Move from './Move';
-import Position from './Position';
+import Coord from '../structs/Coord';
+import Move from '../structs/Move';
+import Position from '../structs/Position';
 import { Shape } from './Shape';
 import TetrisState from './TetrisState';
-import ZMod from './ZMod';
+import ZMod from '../util/ZMod';
 
 export default class Piece {
   /**

@@ -1,5 +1,5 @@
-import Coord from "./Coord";
-import Move from "./Move";
+import Coord from "../structs/Coord";
+import Move from "../structs/Move";
 import Position from "./Position";
 
 describe('Position', () => {

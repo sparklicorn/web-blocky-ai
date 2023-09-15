@@ -1,7 +1,7 @@
 import Coord from './Coord';
 import Move from './Move';
-import { validatePositiveInteger } from './Util';
-import ZMod from './ZMod';
+import { validatePositiveInteger } from '../util/Util';
+import ZMod from '../util/ZMod';
 
 export default class Position extends Move {
   /**
