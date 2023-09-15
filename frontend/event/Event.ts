@@ -1,3 +1,5 @@
+import Freezable from "../tetris/Freezable";
+
 /**
  * EventData is a map of string keys to any values.
  */
@@ -13,7 +15,7 @@ export type EventListener = <E extends Event>(event: E) => void;
 /**
  * An Event is a named object that may contain data to be consumed by listeners.
  */
-export class Event {
+export class Event extends Freezable {
   readonly name: string;
   protected _data: EventData;
 
@@ -21,14 +23,24 @@ export class Event {
    * Creates a new Event with the given name and optional data.
    */
   constructor(name: string, data: EventData = {}) {
+    super();
     this.name = name;
     this._data = data;
   }
+
+  freeze(): Event {
+		return super.freeze() as Event;
+	}
+
+	unfreeze(): Freezable {
+		throw new Error("Operation not supported.");
+	}
 
   /**
    * Returns a shallow copy of the event's data.
    */
   get data(): any {
+    // TODO This should be a deep copy.
     return Object.assign({}, this._data);
   }
 
@@ -39,6 +51,7 @@ export class Event {
    * @returns This Event.
    */
   add(data: EventData): Event {
+    this.throwIfFrozen();
     Object.assign(this._data, data);
     return this;
   }

@@ -1,6 +1,6 @@
 import Coord from './Coord';
-import { Event, EventListener } from './Event';
-import EventBus from './EventBus';
+import { Event, EventListener } from '../event/Event';
+import EventBus from '../event/EventBus';
 import Move from './Move';
 import TetrisEvent from './TetrisEvent';
 import TetrisState from './TetrisState';
@@ -439,64 +439,27 @@ export default class Tetris {
 		Event Handling
 	**********************/
 
-	/**
-	 * Registers an event listener for the given event.
-	 * Initializes the event bus if it has not been initialized yet.
-	 *
-	 * @param eventName The event to listen for.
-	 * @param listener The listener to register.
-	 * @return True if the listener was registered; otherwise false.
-	 */
 	registerEventListener(eventName: string, listener: EventListener): boolean {
-		if (!this.eventBus) {
-			this.eventBus = new EventBus();
-		}
-
+		this.eventBus = this.eventBus || new EventBus();
 		return this.eventBus.registerEventListener(eventName, listener);
 	}
 
-	/**
-	 * Unregisters an event listener for the given event.
-	 * If the event bus has not been initialized, then nothing happens.
-	 *
-	 * @param event The event to unregister from.
-	 * @param listener The listener to unregister.
-	 * @return True if the listener was unregistered; otherwise false.
-	 */
-	unregisterEventListener(event: TetrisEvent, listener: EventListener): boolean {
-		if (!this.eventBus) {
-			return false;
-		}
-
-		return this.eventBus.unregisterEventListener(event.name, listener);
+	unregisterEventListener(eventName: string, listener: EventListener): boolean {
+		return (this.eventBus) ? this.eventBus.unregisterEventListener(eventName, listener) : false;
 	}
 
-	/**
-	 * Unregisters all listeners for the given event.
-	 * If the event bus has not been initialized, then nothing happens.
-	 *
-	 * @param event The event to unregister from.
-	 * @return True if the event was unregistered; otherwise false.
-	 */
-	unregisterAllEventListeners(event: TetrisEvent): boolean {
-		if (!this.eventBus) {
-			return false;
-		}
-
-		return this.eventBus.unregisterAllEventListeners(event.name);
+	unregisterAllEventListeners(eventName: string): boolean {
+		return (this.eventBus) ? this.eventBus.unregisterAllEventListeners(eventName) : false;
 	}
 
-	/**
-	 * Throws an event if the eventBus has been initialized.
-	 *
-	 * @param event The event to throw.
-	 */
 	throwEvent(event: Event): void {
-		if (!this.eventBus) {
-			return;
+		if (this.eventBus) {
+			this.eventBus.throwEvent(event);
 		}
+	}
 
-		this.eventBus.throwEvent(event);
+	hasListeners(eventName: string): boolean {
+		return (this.eventBus) ? this.eventBus.hasListeners(eventName) : false;
 	}
 
 	// protected static record PQEntry<T>(T data, int priority) implements Comparable<PQEntry<T>> {
