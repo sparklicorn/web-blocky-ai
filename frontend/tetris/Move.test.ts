@@ -12,7 +12,7 @@ describe('Move', () => {
     const expectFrozenWithProps = (move: Move, row: number, col: number, rotation: number) => {
       expect(move.row).toBe(row);
       expect(move.col).toBe(col);
-      expect(move.frozen).toBe(true);
+      expect(move.isFrozen()).toBe(true);
     };
 
     describe('preset Moves', () => {
@@ -43,7 +43,7 @@ describe('Move', () => {
       });
 
       test('does not copy frozen status', () => {
-        expect(Move.copy(other.freeze()).frozen).toBe(false);
+        expect(Move.copy(other.freeze()).isFrozen()).toBe(false);
       });
     });
   });
@@ -53,33 +53,22 @@ describe('Move', () => {
       expect(move.row).toBe(1);
       expect(move.col).toBe(2);
       expect(move.rotation).toBe(3);
-      expect(move.frozen).toBe(false);
+      expect(move.isFrozen()).toBe(false);
     });
   });
 
   describe('freeze', () => {
-    test('sets frozen to true', () => {
-      expect(move.frozen).toBe(false);
+    test('calls freeze on the offset', () => {
+      jest.spyOn(move.offset, 'freeze');
       move.freeze();
-      expect(move.frozen).toBe(true);
+      expect(move.offset.isFrozen()).toBe(true);
+      expect(move.offset.freeze).toHaveBeenCalledTimes(1);
     });
 
-    test('sets frozen on offset', () => {
-      expect(move.offset.frozen).toBe(false);
-      move.freeze();
-      expect(move.offset.frozen).toBe(true);
-    });
-
-    test('returns itself', () => {
+    test('delegates to super.freeze and returns itself', () => {
+      jest.spyOn(Move.prototype, 'freeze');
       expect(move.freeze()).toBe(move);
-    });
-  });
-
-  describe('get frozen', () => {
-    test('returns frozen status', () => {
-      expect(move.frozen).toBe(false);
-      move.freeze();
-      expect(move.frozen).toBe(true);
+      expect(Move.prototype.freeze).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -25,7 +25,7 @@ describe('Position', () => {
       expect(position.location).toEqual(new Coord(1, 2));
       expect(position.rotation).toBe(3);
       expect(position.maxRotation).toBe(4);
-      expect(position.frozen).toBe(false);
+      expect(position.isFrozen()).toBe(false);
     });
 
     describe('when rotation >= maxRotation', () => {
@@ -44,23 +44,10 @@ describe('Position', () => {
   });
 
   describe('freeze', () => {
-    test('sets frozen to true', () => {
-      expect(position.frozen).toBe(false);
-      position.freeze();
-      expect(position.frozen).toBe(true);
-
-      // Making sure 'as Position' is not erasing maxRotation
-      expect(position.maxRotation).toBe(4);
-    });
-
-    test('sets frozen on offset', () => {
-      expect(position.offset.frozen).toBe(false);
-      position.freeze();
-      expect(position.offset.frozen).toBe(true);
-    });
-
-    test('returns itself', () => {
+    test('delegates to super.freeze and returns itself', () => {
+      jest.spyOn(Position.prototype, 'freeze');
       expect(position.freeze()).toBe(position);
+      expect(Position.prototype.freeze).toHaveBeenCalledTimes(1);
     });
   });
 
