@@ -1,5 +1,5 @@
-import Coord from './Coord';
-import ZMod from './ZMod';
+import Coord from '../structs/Coord';
+import ZMod from '../util/ZMod';
 
 export class Shape {
   static readonly O = new Shape(1, [

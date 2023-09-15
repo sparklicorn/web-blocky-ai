@@ -1,11 +1,11 @@
-import Coord from './Coord';
+import Coord from '../structs/Coord';
 import { Event, EventListener } from '../event/Event';
 import EventBus from '../event/EventBus';
-import Move from './Move';
+import Move from '../structs/Move';
 import TetrisEvent from './TetrisEvent';
 import TetrisState from './TetrisState';
-import Timer from './Timer';
-import { bounded } from './Util';
+import Timer from '../util/Timer';
+import { bounded } from '../util/Util';
 import ITetrisGame from './ITetrisGame';
 import IEventBussy from '../event/IEventBussy';
 

@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import Tetris from '../tetris/Tetris';
 import { EventListener } from '../event/Event';
 import TetrisEvent from '../tetris/TetrisEvent';
-import Coord from '../tetris/Coord';
+import Coord from '../structs/Coord';
 import TetrisState from '../tetris/TetrisState';
 import ITetrisGame from '../tetris/ITetrisGame';
-import { bounded } from '../tetris/Util';
+import { bounded } from '../util/Util';
 
 const bgColor = '#000';
 

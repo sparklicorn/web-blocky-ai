@@ -1,5 +1,5 @@
 import { SHAPES, Shape } from './Shape';
-import { range, shuffle } from './Util';
+import { range, shuffle } from '../util/Util';
 
 export default class ShapeQueue {
   static readonly DEFAULT_SIZE = 14;

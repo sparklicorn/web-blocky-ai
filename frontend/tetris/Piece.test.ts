@@ -1,10 +1,10 @@
-import Coord from "./Coord";
-import Move from "./Move";
+import Coord from "../structs/Coord";
+import Move from "../structs/Move";
 import Piece from "./Piece";
-import Position from "./Position";
+import Position from "../structs/Position";
 import { Shape } from "./Shape";
 import TetrisState from "./TetrisState";
-import ZMod from "./ZMod";
+import ZMod from "../util/ZMod";
 
 describe('Piece', () => {
   let piece: Piece;

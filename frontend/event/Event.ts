@@ -1,4 +1,4 @@
-import Freezable from "../tetris/Freezable";
+import Freezable from "../structs/Freezable";
 
 /**
  * EventData is a map of string keys to any values.

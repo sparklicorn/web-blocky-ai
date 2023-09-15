@@ -1,10 +1,10 @@
-import Coord from './Coord';
-import Move from './Move';
+import Coord from '../structs/Coord';
+import Move from '../structs/Move';
 import Piece from './Piece';
-import Position from './Position';
+import Position from '../structs/Position';
 import { SHAPES, Shape } from './Shape';
 import ShapeQueue from './ShapeQueue';
-import { bounded, validatePositiveInteger } from './Util';
+import { bounded, validatePositiveInteger } from '../util/Util';
 
 export default class TetrisState {
 	// TODO experiment with different values
