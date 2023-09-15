@@ -123,8 +123,8 @@ export default class Tetris implements ITetrisGame, IEventBussy {
             j < (row + numRowsToDrop + 1) * this._state.cols;
             j++
           ) {
-						this._state.board[j] = this._state.board[k];
-						this._state.board[k++] = 0;
+						this._state.setCellByIndex(j, this._state.getCellByIndex(k));
+						this._state.setCellByIndex(k++, 0);
 					}
 				}
 			}

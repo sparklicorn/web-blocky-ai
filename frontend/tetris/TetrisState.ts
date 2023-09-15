@@ -176,6 +176,21 @@ export default class TetrisState {
 	}
 
 	/**
+	 * Sets the value of the cell at the given index.
+	 *
+	 * @param index The index of the cell to set.
+	 * @param value The value to set the cell to.
+	 * @throws Error if the given index is out of bounds.
+	 */
+	setCellByIndex(index: number, value: number): void {
+		if (index < 0 || index >= this._board.length) {
+			throw new Error(`Index ${index} is out of bounds`);
+		}
+
+		this._board[index] = value;
+	}
+
+	/**
 	 * Sets the value of the cell at the given location.
 	 *
 	 * @param location The location of the cell to set.
@@ -188,6 +203,21 @@ export default class TetrisState {
 		}
 
     this._board[location.row * this.cols + location.col] = value;
+	}
+
+	/**
+	 * Gets the value of the cell at the given index.
+	 *
+	 * @param index The index of the cell to get.
+	 * @return The value of the cell at the given index.
+	 * @throws Error if the given index is out of bounds.
+	 */
+	getCellByIndex(index: number): number {
+		if (index < 0 || index >= this._board.length) {
+			throw new Error(`Index ${index} is out of bounds`);
+		}
+
+		return this._board[index];
 	}
 
 	/**
