@@ -6,8 +6,10 @@ import TetrisEvent from './TetrisEvent';
 import TetrisState from './TetrisState';
 import Timer from './Timer';
 import { bounded } from './Util';
+import ITetrisGame from './ITetrisGame';
+import IEventBussy from '../event/IEventBussy';
 
-export default class Tetris {
+export default class Tetris implements ITetrisGame, IEventBussy {
   static readonly PIECE_PLACED_DELAY_MS = 250;
   static readonly POINTS_BY_LINES_CLEARED = [0, 40, 100, 300, 1200];
 
@@ -433,6 +435,22 @@ export default class Tetris {
 		}
 
 		return false;
+	}
+
+	moveLeft(): boolean {
+		return this.shift(0, -1);
+	}
+
+	moveRight(): boolean {
+		return this.shift(0, 1);
+	}
+
+	moveDown(): boolean {
+		return this.shift(1, 0);
+	}
+
+	getState(): TetrisState {
+		return TetrisState.copy(this._state);
 	}
 
 	/*********************
