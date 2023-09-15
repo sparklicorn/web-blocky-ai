@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import Tetris from 'Frontend/tetris/Tetris';
-import { EventListener } from 'Frontend/tetris/Event';
-import TetrisEvent from 'Frontend/tetris/TetrisEvent';
-import Coord from 'Frontend/tetris/Coord';
-
-const bounded = (value: number, min: number, max: number) => {
-  return Math.min(Math.max(value, min), max);
-};
+import Tetris from '../tetris/Tetris';
+import { EventListener } from '../event/Event';
+import TetrisEvent from '../tetris/TetrisEvent';
+import Coord from '../tetris/Coord';
+import TetrisState from '../tetris/TetrisState';
+import { bounded } from '../tetris/Util';
 
 const bgColor = '#000';
 

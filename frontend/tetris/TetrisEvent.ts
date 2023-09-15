@@ -1,4 +1,4 @@
-import { Event, EventData } from './Event';
+import { Event, EventData } from '../event/Event';
 import Piece from './Piece';
 import Tetris from './Tetris';
 
