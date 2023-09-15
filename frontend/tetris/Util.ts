@@ -11,6 +11,9 @@ export const bounded = (min: number, max: number, value: number): number => {
 
 /**
  * Shuffles the given array in place using the Fisher-Yates algorithm.
+ *
+ * @param arr The array to shuffle.
+ * @returns The given array for convenience.
  */
 export const shuffle = (arr: any[]): any[] => {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -21,15 +24,25 @@ export const shuffle = (arr: any[]): any[] => {
 
 /**
  * Swaps the elements at the given indices in the given array.
+ *
+ * @param arr The array in which to swap elements.
+ * @param i The index of the first element to swap.
+ * @param j The index of the second element to swap.
+ * @returns The given array for convenience.
  */
-export const swap = (arr: any[], i: number, j: number): void => {
+export const swap = (arr: any[], i: number, j: number): any[] => {
   const temp = arr[i];
   arr[i] = arr[j];
   arr[j] = temp;
+  return arr;
 };
 
 /**
  * Returns an array of numbers from start to end, inclusive.
+ *
+ * @param start The first number in the range.
+ * @param end The last number in the range.
+ * @returns An array of numbers from start to end, inclusive.
  */
 export const range = (start: number, end: number): number[] => {
   const result = [];
@@ -39,26 +52,58 @@ export const range = (start: number, end: number): number[] => {
   return result;
 };
 
-export const validateInteger = (value: number, name: string): void => {
-  if (!Number.isInteger(value)) {
-    throw new Error(`${name} must be an integer`);
-  }
-};
-
-export const validateNonNegative = (value: number, name: string): void => {
+/**
+ * Returns the given value if it is non-negative, otherwise throws an error.
+ */
+export const validateNonNegative = (value: number, name: string): number => {
   if (value < 0) {
     throw new Error(`${name} must be non-negative`);
   }
+  return value;
 };
 
-export const validatePositive = (value: number, name: string): void => {
+/**
+ * Returns the given value if it is positive, otherwise throws an error.
+ */
+export const validatePositive = (value: number, name: string): number => {
   if (value <= 0) {
     throw new Error(`${name} must be positive`);
   }
+  return value;
 };
 
-export const validateNegative = (value: number, name: string): void => {
+/**
+ * Returns the given value if it is negative, otherwise throws an error.
+ */
+export const validateNegative = (value: number, name: string): number => {
   if (value >= 0) {
     throw new Error(`${name} must be negative`);
   }
+  return value;
+};
+
+/**
+ * Returns the given value if it is an integer, otherwise throws an error.
+ */
+export const validateInteger = (value: number, name: string): number => {
+  if (!Number.isInteger(value)) {
+    throw new Error(`${name} must be an integer`);
+  }
+  return value;
+};
+
+/**
+ * Returns the given value if it is a positive integer, otherwise throws an error.
+ */
+export const validatePositiveInteger = (value: number, name: string): number => {
+  validateInteger(value, name)
+  return validatePositive(value, name);
+};
+
+/**
+ * Returns the given value if it is a negative integer, otherwise throws an error.
+ */
+export const validateNegativeInteger = (value: number, name: string): number => {
+  validateInteger(value, name);
+  return validateNegative(value, name);
 };
