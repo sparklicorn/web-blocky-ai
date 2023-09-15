@@ -4,7 +4,7 @@ import Piece from './Piece';
 import Position from './Position';
 import { SHAPES, Shape } from './Shape';
 import ShapeQueue from './ShapeQueue';
-import { bounded, validateInteger, validatePositive } from './Util';
+import { bounded, validatePositiveInteger } from './Util';
 
 export default class TetrisState {
 	// TODO experiment with different values
@@ -29,9 +29,11 @@ export default class TetrisState {
 	 * @param cols Number of columns on the board.
 	 */
 	static calcEntryColumn(cols : number) {
-		validateInteger(cols, 'cols');
-		validatePositive(cols, 'cols');
-		const _cols = bounded(TetrisState.MIN_COLS, TetrisState.MAX_COLS, cols);
+		const _cols = bounded(
+			TetrisState.MIN_COLS,
+			TetrisState.MAX_COLS,
+			validatePositiveInteger(cols, 'cols')
+		);
 
 		return Math.floor(_cols / 2) - ((_cols % 2 === 0) ? 1 : 0);
 	}
@@ -95,13 +97,8 @@ export default class TetrisState {
     entryCoord: Coord = TetrisState.DEFAULT_ENTRY_COORD,
     linesPerLevel: number | ((level: number) => number) = TetrisState.DEFAULT_LINES_PER_LEVEL
   ) {
-		validateInteger(rows, 'rows');
-		validateInteger(cols, 'cols');
-		validatePositive(rows, 'rows');
-		validatePositive(cols, 'cols');
-
-		this.rows = rows;
-		this.cols = cols;
+		this.rows = validatePositiveInteger(rows, 'rows');
+		this.cols = validatePositiveInteger(cols, 'cols');
 		this.entryCoord = entryCoord;
 
 		this._board = Array(rows * cols).fill(0);
