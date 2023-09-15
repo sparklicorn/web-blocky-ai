@@ -1,34 +1,12 @@
+import { validateInteger, validatePositiveInteger } from "./Util";
+
 export default class ZMod {
-  private static readonly ERR_VALUE_NOT_INTEGER = 'Value must be an integer.';
-  private static readonly ERR_VALUE_NOT_POSITIVE = 'Value must be positive.';
-
-  /**
-   * Throws an error if the value is not an integer.
-   */
-  private static _validateInteger(value: number): void {
-    if (!Number.isInteger(value)) {
-      throw new Error(ZMod.ERR_VALUE_NOT_INTEGER);
-    }
-  }
-
-  /**
-   * Throws an error if the value is not a positive integer.
-   */
-  private static _validatePositiveInteger(value: number): void {
-    ZMod._validateInteger(value);
-    if (value <= 0) {
-      throw new Error(ZMod.ERR_VALUE_NOT_POSITIVE);
-    }
-  }
-
   /**
    * Returns the value modulo mod.
    */
   static apply(value: number, mod: number): number {
-    ZMod._validateInteger(value);
-    ZMod._validatePositiveInteger(mod);
-
-    return ((value % mod) + mod) % mod;
+    validatePositiveInteger(mod, 'mod');
+    return ((validateInteger(value, 'value') % mod) + mod) % mod;
   }
 
   private _value: number = 0;
@@ -38,9 +16,7 @@ export default class ZMod {
    * Creates a new ZMod with the given value and mod.
    */
   constructor(value: number, mod: number) {
-    ZMod._validatePositiveInteger(mod);
-
-    this.mod = mod;
+    this.mod = validatePositiveInteger(mod, 'mod');
     this.set(value);
   }
 
@@ -57,8 +33,7 @@ export default class ZMod {
    * @returns This ZMod.
    */
   set(value: number): ZMod {
-    ZMod._validateInteger(value);
-    this._value = ((value % this.mod) + this.mod) % this.mod;
+    this._value = ((validateInteger(value, 'value') % this.mod) + this.mod) % this.mod;
     return this;
   }
 

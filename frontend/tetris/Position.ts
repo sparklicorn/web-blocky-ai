@@ -1,12 +1,10 @@
 import Coord from './Coord';
 import Move from './Move';
+import { validatePositiveInteger } from './Util';
 import ZMod from './ZMod';
 
 export default class Position extends Move {
   static readonly ERR_FROZEN: string = 'Cannot modify frozen Position';
-  static readonly ERR_MAX_ROTATION_NOT_POSITIVE: string = 'Max rotation must be a positive integer';
-  static readonly ERR_MAX_ROTATION_NOT_INTEGER: string = 'Max rotation must be an integer';
-
   /**
    * Returns a new Position with the same row, col, rotation, and maxRotation as the given Position.
    *
@@ -25,7 +23,7 @@ export default class Position extends Move {
    */
   constructor(location: { row: number, col: number }, rotation: number, maxRotation: number) {
     super(location, rotation);
-    this._maxRotation = this._validateMaxRotation(maxRotation);
+    this._maxRotation = validatePositiveInteger(maxRotation, 'maxRotation');
     this._normalizeRotation();
   }
 
@@ -77,11 +75,7 @@ export default class Position extends Move {
    * @throws {Error} If this Position is frozen
    */
   set maxRotation(maxRotation: number) {
-    if (this._frozen) {
-      throw new Error(Position.ERR_FROZEN);
-    }
-
-    this._maxRotation = this._validateMaxRotation(maxRotation);
+    this._maxRotation = validatePositiveInteger(maxRotation, 'maxRotation');
     this._normalizeRotation();
   }
 
@@ -166,15 +160,5 @@ export default class Position extends Move {
 
   private _normalizeRotation(): void {
     this._rotation = ZMod.apply(this._rotation, this._maxRotation);
-  }
-
-  private _validateMaxRotation(maxRotation: number): number {
-    if (maxRotation < 1) {
-      throw new Error(Position.ERR_MAX_ROTATION_NOT_POSITIVE);
-    }
-    if (!Number.isInteger(maxRotation)) {
-      throw new Error(Position.ERR_MAX_ROTATION_NOT_INTEGER);
-    }
-    return maxRotation;
   }
 }

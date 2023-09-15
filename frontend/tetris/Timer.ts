@@ -1,17 +1,7 @@
+import { validateNonNegative, validatePositive } from "./Util";
+
 export default class Timer {
   static readonly DEFAULT_DELAY_MS = 1000;
-
-  private static _validateNonNegative(value: number, name: string): void {
-    if (value < 0) {
-      throw new Error(`${name} must be non-negative`);
-    }
-  }
-
-  private static _validatePositive(value: number, name: string): void {
-    if (value <= 0) {
-      throw new Error(`${name} must be positive`);
-    }
-  }
 
   private static _now(): number {
     return performance.now() || Date.now();
@@ -76,8 +66,7 @@ export default class Timer {
    * Sets the time in milliseconds between ticks.
    */
   set delay(delayMs: number) {
-    Timer._validatePositive(delayMs, 'delay');
-    this._delay = delayMs;
+    this._delay = validatePositive(delayMs, 'delay');
   }
 
   /**
@@ -131,11 +120,11 @@ export default class Timer {
     initialDelayMs: number = this._delay,
     repeats: boolean = true
   ): void {
+    validateNonNegative(initialDelayMs, 'initialDelayMs');
+
     if (this.isRunning) {
       return;
     }
-
-    Timer._validateNonNegative(initialDelayMs, 'initialDelayMs');
 
     // Handles validation of delay
     this.delay = delayMs;
