@@ -153,6 +153,32 @@ describe('TetrisState', () => {
     });
   });
 
+  describe('get/set CellByIndex', () => {
+    let index: number;
+
+    beforeEach(() => {
+      index = 0;
+    });
+
+    describe('when the given index is out of bounds', () => {
+      test('throws an error', () => {
+        [-1, state.rows * state.cols].forEach((index) => {
+          expect(() => state.getCellByIndex(index)).toThrow();
+          expect(() => state.setCellByIndex(index, 0)).toThrow();
+        });
+      });
+    });
+
+    describe('when the given index is in bounds', () => {
+      test('returns the expected value', () => {
+        const expectedVal = 42;
+
+        state.setCellByIndex(index, expectedVal);
+        expect(state.getCellByIndex(index)).toEqual(expectedVal);
+      });
+    });
+  });
+
   describe('isCellEmpty', () => {
     describe('when the given location is out of bounds', () => {
       test('throws an error', () => {
