@@ -5,7 +5,7 @@ describe('Coord', () => {
     const expectFrozenAtCoord = (coord: Coord, row: number, col: number) => {
       expect(coord.row).toBe(row);
       expect(coord.col).toBe(col);
-      expect(coord.frozen).toBe(true);
+      expect(coord.isFrozen()).toBe(true);
       expect(() => {
         coord.row = 1;
       }).toThrowError();
@@ -116,17 +116,15 @@ describe('Coord', () => {
     test('creates a Coord with the given row and col', () => {
       expect(coord.row).toBe(1);
       expect(coord.col).toBe(2);
-      expect(coord.frozen).toBe(false);
+      expect(coord.isFrozen()).toBe(false);
     });
   });
 
   describe('freeze', () => {
     test('makes the Coord unmodifiable', () => {
-      expect(coord.frozen).toBe(false);
-
+      expect(coord.isFrozen()).toBe(false);
       coord.freeze();
-
-      expect(coord.frozen).toBe(true);
+      expect(coord.isFrozen()).toBe(true);
       expect(() => {
         coord.row = 1;
       }).toThrowError();
@@ -135,25 +133,27 @@ describe('Coord', () => {
       }).toThrowError();
     });
 
-    test('returns the Coord', () => {
+    test('deledates to super.freeze and returns the Coord', () => {
+      jest.spyOn(Coord.prototype, 'freeze');
       expect(coord.freeze()).toBe(coord);
+      expect(Coord.prototype.freeze).toHaveBeenCalledTimes(1);
     });
 
     test('does nothing if the Coord is already frozen', () => {
       coord.freeze();
-      expect(coord.frozen).toBe(true);
+      expect(coord.isFrozen()).toBe(true);
       expect(() => {
         coord.freeze();
       }).not.toThrowError();
-      expect(coord.frozen).toBe(true);
+      expect(coord.isFrozen()).toBe(true);
     });
   });
 
-  describe('get frozen', () => {
-    test('returns true if the Coord is frozen', () => {
-      expect(coord.frozen).toBe(false);
-      coord.freeze();
-      expect(coord.frozen).toBe(true);
+  describe('unfreeze', () => {
+    test('throws an error', () => {
+      expect(() => {
+        coord.unfreeze();
+      }).toThrowError();
     });
   });
 

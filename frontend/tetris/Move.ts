@@ -1,8 +1,7 @@
 import Coord from './Coord';
+import Freezable from './Freezable';
 
-export default class Move {
-  static readonly ERR_FROZEN: string = 'Cannot modify frozen Move';
-
+export default class Move extends Freezable {
   static readonly STAND = new Move(Coord.ZERO, 0).freeze();
   static readonly UP = new Move(Coord.UP, 0).freeze();
   static readonly DOWN = new Move(Coord.DOWN, 0).freeze();
@@ -22,34 +21,24 @@ export default class Move {
 
 	protected _offset: Coord;
 	protected _rotation: number;
-  protected _frozen: boolean;
 
   /**
    * Creates a new Move with the given offset and rotation.
    */
 	constructor(location: { row: number, col: number }, rotation: number) {
+    super();
 		this._offset = Coord.copy(location);
 		this._rotation = rotation;
-    this._frozen = false;
 	}
 
-  /**
-   * Freezes this Move, preventing further modification.
-   *
-   * @returns This Move
-   */
   freeze(): Move {
-    this._frozen = true;
     this._offset.freeze();
-    return this;
+    return super.freeze() as Move;
   }
 
-  /**
-   * Gets whether this Move is frozen.
-   */
-  get frozen() {
-    return this._frozen;
-  }
+	unfreeze(): Freezable {
+		throw new Error("Operation not supported.");
+	}
 
   /**
    * Gets the offset of this Move.
@@ -83,7 +72,7 @@ export default class Move {
    * Sets the row of this Move.
    */
   set row(row: number) {
-    this._validateFrozen();
+    this.throwIfFrozen();
     this._offset.row = row;
   }
 
@@ -91,7 +80,7 @@ export default class Move {
    * Sets the column of this Move.
    */
   set col(col: number) {
-    this._validateFrozen();
+    this.throwIfFrozen();
     this._offset.col = col;
   }
 
@@ -99,7 +88,7 @@ export default class Move {
    * Sets the rotation of this Move.
    */
   set rotation(rotation: number) {
-    this._validateFrozen();
+    this.throwIfFrozen();
     this._rotation = rotation;
   }
 
@@ -111,7 +100,7 @@ export default class Move {
    * @returns This Move.
    */
   set(offset?: Coord, rotation?: number): Move {
-    this._validateFrozen();
+    this.throwIfFrozen();
 
     if (offset) {
       this._offset.reset(offset);
@@ -130,7 +119,7 @@ export default class Move {
    * @param offset The offset to shift by
    */
   shift(offset: Coord): Move {
-    this._validateFrozen();
+    this.throwIfFrozen();
     this._offset.add(offset);
     return this;
   }
@@ -141,7 +130,7 @@ export default class Move {
    * @param other The Move to add
    */
   add(other: Move): Move {
-    this._validateFrozen();
+    this.throwIfFrozen();
     this._offset.add(other.offset);
     this._rotation += other.rotation;
     return this;
@@ -153,7 +142,7 @@ export default class Move {
    * @param rotation The amount to rotate by
    */
   rotate(rotation: number): Move {
-    this._validateFrozen();
+    this.throwIfFrozen();
     this._rotation += rotation;
     return this;
   }
@@ -200,10 +189,4 @@ export default class Move {
 	toString(): string {
     return `Move{offset: ${this._offset.toString()}, rotation: ${this._rotation}}`;
 	}
-
-  protected _validateFrozen(): void {
-    if (this._frozen) {
-      throw new Error(Move.ERR_FROZEN);
-    }
-  }
 }

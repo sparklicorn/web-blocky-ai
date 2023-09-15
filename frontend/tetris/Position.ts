@@ -4,7 +4,6 @@ import { validatePositiveInteger } from './Util';
 import ZMod from './ZMod';
 
 export default class Position extends Move {
-  static readonly ERR_FROZEN: string = 'Cannot modify frozen Position';
   /**
    * Returns a new Position with the same row, col, rotation, and maxRotation as the given Position.
    *
@@ -27,11 +26,6 @@ export default class Position extends Move {
     this._normalizeRotation();
   }
 
-  /**
-   * Freezes this Position, preventing further modification.
-   *
-   * @returns This Position
-   */
   freeze(): Position {
     return super.freeze() as Position;
   }
@@ -75,6 +69,7 @@ export default class Position extends Move {
    * @throws {Error} If this Position is frozen
    */
   set maxRotation(maxRotation: number) {
+    this.throwIfFrozen();
     this._maxRotation = validatePositiveInteger(maxRotation, 'maxRotation');
     this._normalizeRotation();
   }
