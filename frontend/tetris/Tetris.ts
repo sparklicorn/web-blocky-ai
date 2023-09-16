@@ -1,13 +1,15 @@
-import Coord from './Coord';
-import { Event, EventListener } from './Event';
-import EventBus from './EventBus';
-import Move from './Move';
+import Coord from '../structs/Coord';
+import { Event, EventListener } from '../event/Event';
+import EventBus from '../event/EventBus';
+import Move from '../structs/Move';
 import TetrisEvent from './TetrisEvent';
 import TetrisState from './TetrisState';
-import Timer from './Timer';
-import { bounded } from './Util';
+import Timer from '../util/Timer';
+import { bounded } from '../util/Util';
+import ITetrisGame from './ITetrisGame';
+import IEventBussy from '../event/IEventBussy';
 
-export default class Tetris {
+export default class Tetris implements ITetrisGame, IEventBussy {
   static readonly PIECE_PLACED_DELAY_MS = 250;
   static readonly POINTS_BY_LINES_CLEARED = [0, 40, 100, 300, 1200];
 
@@ -121,8 +123,8 @@ export default class Tetris {
             j < (row + numRowsToDrop + 1) * this._state.cols;
             j++
           ) {
-						this._state.board[j] = this._state.board[k];
-						this._state.board[k++] = 0;
+						this._state.setCellByIndex(j, this._state.getCellByIndex(k));
+						this._state.setCellByIndex(k++, 0);
 					}
 				}
 			}
@@ -435,68 +437,47 @@ export default class Tetris {
 		return false;
 	}
 
+	moveLeft(): boolean {
+		return this.shift(0, -1);
+	}
+
+	moveRight(): boolean {
+		return this.shift(0, 1);
+	}
+
+	moveDown(): boolean {
+		return this.shift(1, 0);
+	}
+
+	getState(): TetrisState {
+		return TetrisState.copy(this._state);
+	}
+
 	/*********************
 		Event Handling
 	**********************/
 
-	/**
-	 * Registers an event listener for the given event.
-	 * Initializes the event bus if it has not been initialized yet.
-	 *
-	 * @param eventName The event to listen for.
-	 * @param listener The listener to register.
-	 * @return True if the listener was registered; otherwise false.
-	 */
 	registerEventListener(eventName: string, listener: EventListener): boolean {
-		if (!this.eventBus) {
-			this.eventBus = new EventBus();
-		}
-
+		this.eventBus = this.eventBus || new EventBus();
 		return this.eventBus.registerEventListener(eventName, listener);
 	}
 
-	/**
-	 * Unregisters an event listener for the given event.
-	 * If the event bus has not been initialized, then nothing happens.
-	 *
-	 * @param event The event to unregister from.
-	 * @param listener The listener to unregister.
-	 * @return True if the listener was unregistered; otherwise false.
-	 */
-	unregisterEventListener(event: TetrisEvent, listener: EventListener): boolean {
-		if (!this.eventBus) {
-			return false;
-		}
-
-		return this.eventBus.unregisterEventListener(event.name, listener);
+	unregisterEventListener(eventName: string, listener: EventListener): boolean {
+		return (this.eventBus) ? this.eventBus.unregisterEventListener(eventName, listener) : false;
 	}
 
-	/**
-	 * Unregisters all listeners for the given event.
-	 * If the event bus has not been initialized, then nothing happens.
-	 *
-	 * @param event The event to unregister from.
-	 * @return True if the event was unregistered; otherwise false.
-	 */
-	unregisterAllEventListeners(event: TetrisEvent): boolean {
-		if (!this.eventBus) {
-			return false;
-		}
-
-		return this.eventBus.unregisterAllEventListeners(event.name);
+	unregisterAllEventListeners(eventName: string): boolean {
+		return (this.eventBus) ? this.eventBus.unregisterAllEventListeners(eventName) : false;
 	}
 
-	/**
-	 * Throws an event if the eventBus has been initialized.
-	 *
-	 * @param event The event to throw.
-	 */
 	throwEvent(event: Event): void {
-		if (!this.eventBus) {
-			return;
+		if (this.eventBus) {
+			this.eventBus.throwEvent(event);
 		}
+	}
 
-		this.eventBus.throwEvent(event);
+	hasListeners(eventName: string): boolean {
+		return (this.eventBus) ? this.eventBus.hasListeners(eventName) : false;
 	}
 
 	// protected static record PQEntry<T>(T data, int priority) implements Comparable<PQEntry<T>> {

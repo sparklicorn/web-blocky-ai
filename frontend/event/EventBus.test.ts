@@ -83,5 +83,11 @@ describe('EventBus', () => {
       eventBus.throwEvent(new Event('other'));
       expect(mockListener).not.toHaveBeenCalled();
     });
+
+    test('freezes the given event', () => {
+      expect(event.isFrozen()).toEqual(false);
+      eventBus.throwEvent(event);
+      expect(event.isFrozen()).toEqual(true);
+    });
   });
 });

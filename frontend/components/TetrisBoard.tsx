@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import Tetris from 'Frontend/tetris/Tetris';
-import { EventListener } from 'Frontend/tetris/Event';
-import TetrisEvent from 'Frontend/tetris/TetrisEvent';
-import Coord from 'Frontend/tetris/Coord';
-
-const bounded = (value: number, min: number, max: number) => {
-  return Math.min(Math.max(value, min), max);
-};
+import Tetris from '../tetris/Tetris';
+import { EventListener } from '../event/Event';
+import TetrisEvent from '../tetris/TetrisEvent';
+import Coord from '../structs/Coord';
+import TetrisState from '../tetris/TetrisState';
+import ITetrisGame from '../tetris/ITetrisGame';
+import { bounded } from '../util/Util';
 
 const bgColor = '#000';
 
@@ -15,8 +14,8 @@ export default function TetrisBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   let board : number[] = Array(dimensions.rows * dimensions.columns).fill(0);
-  const game = new Tetris();
-  let state = game.state;
+  const game: ITetrisGame = new Tetris();
+  let state: TetrisState = game.getState();
 
   const width = () => dimensions.columns * dimensions.blockSize;
   const height = () => dimensions.rows * dimensions.blockSize;
@@ -110,9 +109,9 @@ export default function TetrisBoard() {
     canvas.addEventListener('mousemove', mouseMoveListener);
 
     const keyListeners = {
-      ArrowLeft: () => game.shift(0, -1),
-      ArrowRight: () => game.shift(0, 1),
-      ArrowDown: () => game.shift(1, 0),
+      ArrowLeft: () => game.moveLeft(),
+      ArrowRight: () => game.moveRight(),
+      ArrowDown: () => game.moveDown(),
       Enter: () => {
         if (state.isGameOver) {
           game.newGame();
@@ -131,7 +130,7 @@ export default function TetrisBoard() {
         if (!game.rotateClockwise()) {
           console.log('Cannot rotate clockwise');
           // log the game state
-          console.log(JSON.stringify(game.state));
+          console.log(JSON.stringify(game.getState()));
         }
       },
       x: () => game.rotateCounterClockwise(),

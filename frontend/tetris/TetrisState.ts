@@ -1,10 +1,10 @@
-import Coord from './Coord';
-import Move from './Move';
+import Coord from '../structs/Coord';
+import Move from '../structs/Move';
 import Piece from './Piece';
-import Position from './Position';
+import Position from '../structs/Position';
 import { SHAPES, Shape } from './Shape';
 import ShapeQueue from './ShapeQueue';
-import { bounded, validateInteger, validatePositive } from './Util';
+import { bounded, validatePositiveInteger } from '../util/Util';
 
 export default class TetrisState {
 	// TODO experiment with different values
@@ -29,9 +29,11 @@ export default class TetrisState {
 	 * @param cols Number of columns on the board.
 	 */
 	static calcEntryColumn(cols : number) {
-		validateInteger(cols, 'cols');
-		validatePositive(cols, 'cols');
-		const _cols = bounded(TetrisState.MIN_COLS, TetrisState.MAX_COLS, cols);
+		const _cols = bounded(
+			TetrisState.MIN_COLS,
+			TetrisState.MAX_COLS,
+			validatePositiveInteger(cols, 'cols')
+		);
 
 		return Math.floor(_cols / 2) - ((_cols % 2 === 0) ? 1 : 0);
 	}
@@ -95,13 +97,8 @@ export default class TetrisState {
     entryCoord: Coord = TetrisState.DEFAULT_ENTRY_COORD,
     linesPerLevel: number | ((level: number) => number) = TetrisState.DEFAULT_LINES_PER_LEVEL
   ) {
-		validateInteger(rows, 'rows');
-		validateInteger(cols, 'cols');
-		validatePositive(rows, 'rows');
-		validatePositive(cols, 'cols');
-
-		this.rows = rows;
-		this.cols = cols;
+		this.rows = validatePositiveInteger(rows, 'rows');
+		this.cols = validatePositiveInteger(cols, 'cols');
 		this.entryCoord = entryCoord;
 
 		this._board = Array(rows * cols).fill(0);
@@ -179,6 +176,21 @@ export default class TetrisState {
 	}
 
 	/**
+	 * Sets the value of the cell at the given index.
+	 *
+	 * @param index The index of the cell to set.
+	 * @param value The value to set the cell to.
+	 * @throws Error if the given index is out of bounds.
+	 */
+	setCellByIndex(index: number, value: number): void {
+		if (index < 0 || index >= this._board.length) {
+			throw new Error(`Index ${index} is out of bounds`);
+		}
+
+		this._board[index] = value;
+	}
+
+	/**
 	 * Sets the value of the cell at the given location.
 	 *
 	 * @param location The location of the cell to set.
@@ -191,6 +203,21 @@ export default class TetrisState {
 		}
 
     this._board[location.row * this.cols + location.col] = value;
+	}
+
+	/**
+	 * Gets the value of the cell at the given index.
+	 *
+	 * @param index The index of the cell to get.
+	 * @return The value of the cell at the given index.
+	 * @throws Error if the given index is out of bounds.
+	 */
+	getCellByIndex(index: number): number {
+		if (index < 0 || index >= this._board.length) {
+			throw new Error(`Index ${index} is out of bounds`);
+		}
+
+		return this._board[index];
 	}
 
 	/**

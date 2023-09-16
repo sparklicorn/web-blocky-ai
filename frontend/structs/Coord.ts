@@ -1,14 +1,14 @@
+import Freezable from "./Freezable";
+
 /**
  * Contains row, column coordinates.
  */
-export default class Coord {
+export default class Coord extends Freezable {
   static readonly ZERO = new Coord(0, 0).freeze();
   static readonly UP = new Coord(-1, 0).freeze();
   static readonly DOWN = new Coord(1, 0).freeze();
   static readonly LEFT = new Coord(0, -1).freeze();
   static readonly RIGHT = new Coord(0, 1).freeze();
-
-  static readonly ERR_FROZEN = 'Cannot set frozen Coord';
 
 	/**
 	 * Returns a new Coord with the same row and col as the given Coord.
@@ -35,30 +35,22 @@ export default class Coord {
 	}
 
 	private _val: number[];
-  private _frozen: boolean;
 
 	/**
 	 * Creates a new Coord with the given row and column coordinates.
 	 */
 	constructor(row: number, col: number) {
+		super();
 		this._val = [ row, col ];
-    this._frozen = false;
 	}
 
-	/**
-	 * Freezes this Coord, preventing further modification.
-	 */
-  freeze(): Coord {
-    this._frozen = true;
-    return this;
-  }
+	freeze(): Coord {
+		return super.freeze() as Coord;
+	}
 
-	/**
-	 * Gets whether this Coord is frozen.
-	 */
-  get frozen() {
-    return this._frozen;
-  }
+	unfreeze(): Freezable {
+		throw new Error("Operation not supported.");
+	}
 
 	/**
 	 * Gets the row coordinate.
@@ -78,7 +70,7 @@ export default class Coord {
 	 * Sets the row and column coordinates.
 	 */
 	set row(row: number) {
-		this._validateFrozen();
+		this.throwIfFrozen();
 		this._val[0] = row;
 	}
 
@@ -86,7 +78,7 @@ export default class Coord {
 	 * Sets the column coordinate.
 	 */
 	set col(col: number) {
-		this._validateFrozen();
+		this.throwIfFrozen();
 		this._val[1] = col;
 	}
 
@@ -96,7 +88,7 @@ export default class Coord {
 	 * @param location The new coordinates.
 	 */
 	reset(location: { row: number, col: number }): Coord {
-    this._validateFrozen();
+    this.throwIfFrozen();
 		this._val = [ location.row, location.col ];
     return this;
 	}
@@ -107,7 +99,7 @@ export default class Coord {
 	 * @param row Number of rows to add.
 	 */
   addRow(row: number): Coord {
-    this._validateFrozen();
+    this.throwIfFrozen();
 		this._val[0] += row;
     return this;
   }
@@ -118,7 +110,7 @@ export default class Coord {
 	 * @param col Number of columns to add.
 	 */
   addCol(col: number): Coord {
-    this._validateFrozen();
+    this.throwIfFrozen();
     this._val[1] += col;
     return this;
   }
@@ -129,7 +121,7 @@ export default class Coord {
 	 * @param coords Other coords whose positions should be added to this one.
 	 */
 	addCoord(...coords: { row: number, col: number }[]): Coord {
-    this._validateFrozen();
+    this.throwIfFrozen();
     for (let coord of coords) {
       this._val[0] += coord.row;
       this._val[1] += coord.col;
@@ -144,7 +136,7 @@ export default class Coord {
 	 * @param col Number of columns to add.
 	 */
 	add(location: { row: number, col: number }): Coord {
-    this._validateFrozen();
+    this.throwIfFrozen();
 		this._val[0] += location.row;
 		this._val[1] += location.col;
 		return this;
@@ -178,12 +170,6 @@ export default class Coord {
 	 * Returns a string representation of this Coord.
 	 */
 	toString(): string {
-		return `(${this.row}, ${this.col})`;
+		return `(${this.row},${this.col})`;
 	}
-
-	private _validateFrozen() {
-    if (this._frozen) {
-      throw new Error(Coord.ERR_FROZEN);
-    }
-  }
 }
