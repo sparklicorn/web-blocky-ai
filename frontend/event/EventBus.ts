@@ -52,6 +52,7 @@ export default class EventBus implements IEventBussy {
   }
 
   throwEvent(event: Event): void {
+    event.freeze();
     if (event.name in this._listeners) {
       this._listeners[event.name].forEach(listener => listener(event));
     }
