@@ -72,7 +72,7 @@ export default class Timer {
   /**
    * Gets the function that is run on each tick.
    */
-  get runnable() {
+  get runnable(): () => void {
     return this._runnable;
   }
 
@@ -95,7 +95,7 @@ export default class Timer {
    * @param delayMs The number of milliseconds to delay the next tick.
    * Defaults to {@link Timer.DEFAULT_DELAY_MS}.
    */
-  delayNextTick(delayMs: number = Timer.DEFAULT_DELAY_MS): void {
+  delayNextTick(delayMs: number = this.delay): void {
     this._lastTick = Timer._now() + delayMs;
   }
 
