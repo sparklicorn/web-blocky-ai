@@ -25,187 +25,88 @@ export default class Tetris implements ITetrisGame, IEventBussy {
     this.gravityTimer = new Timer(this.gameloop.bind(this));
   }
 
-  /**
-   * Returns a copy current game state.
-   */
-  get state(): TetrisState {
-		return TetrisState.copy(this._state);
+	newGame(): void {
+		this.reset();
+		this.throwEvent(TetrisEvent.NEW_GAME(this));
 	}
 
-  /**
-	 * Returns points rewarded for clearing lines at a given level.
-	 *
-	 * @param lines Number of lines cleared.
-	 * @return Points to reward.
-	 */
-	protected calcPointsForClearing(lines: number): number {
-		return Tetris.POINTS_BY_LINES_CLEARED[lines] * (this._state.level + 1);
-	}
-
-  /**
-	 * Attempts to rotate the current piece clockwise.
-	 * The piece may be shifted left or right to accomodate the rotation.
-	 * TODO Clean up / consolidate the several rotation methods.
-	 *
-	 * @param move The rotation to attempt.
-	 * Should be either Move.CLOCKWISE or Move.COUNTERCLOCKWISE.
-	 * @return True if the piece was successfully rotated; otherwise false.
-	 */
-	protected rotate(move: Move): boolean {
-		const _move = this._state.tryRotation(move);
-
-		if (_move.equals(Move.STAND)) {
-			return false;
+	start(level: number = 0, useGravity: boolean = true): void {
+		if (this._state.hasStarted) {
+			return;
 		}
 
-		this._state.piece.move(_move);
-		this.throwEvent(TetrisEvent.PIECE_ROTATE(this));
+    this._state.level = bounded(0, 19, level);
+		this._state.hasStarted = true;
 
-		return true;
-	}
+		this.nextPiece();
 
-	/**
-	 * Attempts to shift the current piece with the given offset.
-	 *
-	 * @return True if the piece was successfully moved; otherwise false.
-	 */
-	//! NOTE: move.rotation is ignored
-	protected shiftPiece(move: Move): boolean {
-		if (this._state.canPieceMove(move)) {
-			this._state.piece.move(move);
-			this.throwEvent(TetrisEvent.PIECE_SHIFT(this));
-			return true;
+		if (useGravity) {
+			this.enableGravity();
+			this.updateGravityTimerDelayMs();
 		}
 
-		return false;
+		this.throwEvent(TetrisEvent.START(this));
 	}
 
-	/**
-	 * Plots the piece's block data to the board.
-	 * TODO Make public
-	 */
-	protected plotPiece(): void {
+	stop(): void {
+		this._state.isPaused = false;
+		this._state.isGameOver = true;
+		this._state.isClearingLines = false;
 		this._state.placePiece();
-		this.throwEvent(TetrisEvent.PIECE_PLACED(this).add({
-      _numPiecesDropped: this._state.numPiecesDropped
-    }));
-		this.throwEvent(TetrisEvent.BLOCKS(this));
-	}
 
-	// TODO #44 Removes full rows from the board, shifting remaining rows down.
-	protected removeRows(rows: number[]): void {
-		// TODO #44 implement and use below
-	}
-
-	/**
-	 * Clears full lines and shift remaining blocks down.
-	 *
-	 * @return List of cleared rows, or null if no rows were cleared.
-	 */
-	protected clearLines(): number[] {
-		const fullRows = this._state.getFullRows();
-
-		if (fullRows.length > 0) {
-			let numRowsToDrop = 1;
-			let i = fullRows.length - 1;
-			//start above the last row in the clearing list
-			for (let row = fullRows[i--] - 1; row > 0; row--) {
-				//if this row is in the clearing list too...
-				if (i >= 0 && row == fullRows[i]) {
-					numRowsToDrop++;
-					i--;
-				} else {
-					//Row 'row' needs to be shifted down.
-					let k = row * this._state.cols; //starting index for blocks in row 'row'.
-
-					//j = starting index for blocks in row 'row + numRowsToDrop'.
-					//replace blocks in 'row + numRowsToDrop' with blocks in 'row'
-					for (
-            let j = (row + numRowsToDrop) * this._state.cols;
-            j < (row + numRowsToDrop + 1) * this._state.cols;
-            j++
-          ) {
-						this._state.setCellByIndex(j, this._state.getCellByIndex(k));
-						this._state.setCellByIndex(k++, 0);
-					}
-				}
-			}
-		}
-
-		return (fullRows.length === 0) ? [] : fullRows;
-	}
-
-	/**
-	 * Returns whether the game has gravity enabled.
-	 */
-	isGravityEnabled(): boolean {
-		return this.usingGravity;
-	}
-
-	/**
-	 * Disables gravity if it is currently enabled.
-	 */
-	disableGravity(): void {
 		if (this.isGravityEnabled()) {
-			this.usingGravity = false;
 			this.gravityTimer.stop();
-			this.throwEvent(TetrisEvent.GRAVITY_DISABLED());
-		}
-	}
-
-	/**
-	 * Enables gravity if it is currently disabled.
-	 */
-	enableGravity(): void {
-		if (!this.isGravityEnabled()) {
-			this.usingGravity = true;
-      // this.gravityTimer.enable();
-      this.throwEvent(TetrisEvent.GRAVITY_ENABLED());
 		}
 
-    if (this._state.hasStarted && !this._state.isGameOver && !this._state.isPaused) {
-      this.gravityTimer.start(this.gravityDelayMsForLevel());
-    }
+		this.throwEvent(TetrisEvent.STOP(this));
 	}
 
-  protected gravityDelayMsForLevel(): number {
-    return Math.round((Math.pow(0.8 - (this._state.level) * 0.007, this._state.level)) * 1000.0);
-  }
+	pause(): void {
+		if (this._state.isGameOver || this._state.isPaused || !this._state.hasStarted) {
+			return;
+		}
 
-	/**
-	 * Calculates and updates the amount of time between gravity ticks for the current level.
-	 *
-	 * @return The calculated delay (ms).
-	 */
-	protected updateGravityTimerDelayMs(): number {
-		const delay = this.gravityDelayMsForLevel();
+		this._state.isPaused = true;
+
 		if (this.isGravityEnabled()) {
-			this.gravityTimer.delay = delay;
+			this.gravityTimer.stop();
 		}
-		return delay;
+
+		this.throwEvent(TetrisEvent.PAUSE());
 	}
 
-	/**
-	 * Attempts to clear full rows.
-	 *
-	 * @return True if any row was cleared; otherwise false.
-	 */
-	protected attemptClearLines(): boolean {
-		// TODO #44 refactor after clearLines() is refactored
-		const lines = this.clearLines();
-
-		if (lines.length > 0) {
-			this._state.linesCleared += lines.length;
-			this._state.score += this.calcPointsForClearing(lines.length);
-			this._state.linesUntilNextLevel -= lines.length;
-			this._state.isClearingLines = true;
-
-			this.throwEvent(TetrisEvent.LINE_CLEAR(this, lines));
-			this.throwEvent(TetrisEvent.SCORE_UPDATE(this));
-			this.throwEvent(TetrisEvent.BLOCKS(this));
+	resume(): void {
+		if (this._state.hasStarted && !this._state.isGameOver) {
+			this._state.isPaused = false;
+			if (this.isGravityEnabled()) {
+				this.gravityTimer.start(this.gravityDelayMsForLevel());
+			}
+			this.throwEvent(TetrisEvent.RESUME());
 		}
+	}
 
-		return lines.length > 0;
+	moveLeft(): boolean {
+		return this.shift(0, -1);
+	}
+
+	moveRight(): boolean {
+		return this.shift(0, 1);
+	}
+
+	moveDown(): boolean {
+		return this.shift(1, 0);
+	}
+
+	rotateClockwise(): boolean {
+		return this.handleRotation(Move.CLOCKWISE);
+	}
+
+	rotateCounterClockwise(): boolean {
+		return this.handleRotation(Move.COUNTERCLOCKWISE);
+	}
+
+	getState(): TetrisState {
+		return TetrisState.copy(this._state);
 	}
 
 	/**
@@ -259,13 +160,183 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		this.throwEvent(TetrisEvent.GAMELOOP(this));
 	}
 
+  /**
+	 * Returns points rewarded for clearing lines at a given level.
+	 *
+	 * @param lines Number of lines cleared.
+	 * @return Points to reward.
+	 */
+	calcPointsForClearing(lines: number): number {
+		return Tetris.POINTS_BY_LINES_CLEARED[lines] * (this._state.level + 1);
+	}
+
+  /**
+	 * Attempts to rotate the current piece clockwise.
+	 * The piece may be shifted left or right to accomodate the rotation.
+	 * TODO Clean up / consolidate the several rotation methods.
+	 *
+	 * @param move The rotation to attempt.
+	 * Should be either Move.CLOCKWISE or Move.COUNTERCLOCKWISE.
+	 * @return True if the piece was successfully rotated; otherwise false.
+	 */
+	rotate(move: Move): boolean {
+		const _move = this._state.tryRotation(move);
+
+		if (_move.equals(Move.STAND)) {
+			return false;
+		}
+
+		this._state.piece.move(_move);
+		this.throwEvent(TetrisEvent.PIECE_ROTATE(this));
+
+		return true;
+	}
+
+	/**
+	 * Attempts to shift the current piece with the given offset.
+	 *
+	 * @return True if the piece was successfully moved; otherwise false.
+	 */
+	//! NOTE: move.rotation is ignored
+	shiftPiece(move: Move): boolean {
+		if (this._state.canPieceMove(move)) {
+			this._state.piece.move(move);
+			this.throwEvent(TetrisEvent.PIECE_SHIFT(this));
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Plots the piece's block data to the board.
+	 */
+	plotPiece(): void {
+		this._state.placePiece();
+		this.throwEvent(TetrisEvent.PIECE_PLACED(this).add({
+      _numPiecesDropped: this._state.numPiecesDropped
+    }));
+		this.throwEvent(TetrisEvent.BLOCKS(this));
+	}
+
+	/**
+	 * Clears full lines and shift remaining blocks down.
+	 *
+	 * @return List of cleared rows, or null if no rows were cleared.
+	 */
+	clearLines(): number[] {
+		const fullRows = this._state.getFullRows();
+
+		if (fullRows.length > 0) {
+			for (
+				let row = fullRows[fullRows.length - 1] - 1, numRowsToDrop = 1;
+				row >= 0;
+				row--
+			) {
+				// If row is to be cleared, +1 to the amount of rows to drop
+				if (fullRows.includes(row)) {
+					numRowsToDrop++;
+					continue;
+				}
+
+				// If row is empty, then all rows above are empty too.
+				// Clear rows (row + 1) through (row + numRowsToDrop)
+				if (this._state.isRowEmpty(row)) {
+					for (let clearingRow = row + 1; clearingRow <= row + numRowsToDrop; clearingRow++) {
+						this._state.clearRow(clearingRow);
+					}
+
+					break;
+				}
+
+				// Shift row down by 'numRowsToDrop'
+				this._state.copyRow(row, row + numRowsToDrop);
+			}
+		}
+
+		return (fullRows.length === 0) ? [] : fullRows;
+	}
+
+	/**
+	 * Returns whether the game has gravity enabled.
+	 */
+	isGravityEnabled(): boolean {
+		return this.usingGravity;
+	}
+
+	/**
+	 * Disables gravity if it is currently enabled.
+	 */
+	disableGravity(): void {
+		if (this.isGravityEnabled()) {
+			this.usingGravity = false;
+			this.gravityTimer.stop();
+			this.throwEvent(TetrisEvent.GRAVITY_DISABLED());
+		}
+	}
+
+	/**
+	 * Enables gravity if it is currently disabled.
+	 */
+	enableGravity(): void {
+		if (!this.isGravityEnabled()) {
+			this.usingGravity = true;
+      // this.gravityTimer.enable();
+      this.throwEvent(TetrisEvent.GRAVITY_ENABLED());
+		}
+
+    if (this._state.hasStarted && !this._state.isGameOver && !this._state.isPaused) {
+      this.gravityTimer.start(this.gravityDelayMsForLevel());
+    }
+	}
+
+  gravityDelayMsForLevel(): number {
+    return Math.round((Math.pow(0.8 - (this._state.level) * 0.007, this._state.level)) * 1000.0);
+  }
+
+	/**
+	 * Calculates and updates the amount of time between gravity ticks for the current level.
+	 *
+	 * @return The calculated delay (ms).
+	 */
+	updateGravityTimerDelayMs(): number {
+		const delay = this.gravityDelayMsForLevel();
+		if (this.isGravityEnabled()) {
+			this.gravityTimer.delay = delay;
+		}
+		return delay;
+	}
+
+	/**
+	 * Attempts to clear full rows.
+	 *
+	 * @return True if any row was cleared; otherwise false.
+	 */
+	attemptClearLines(): boolean {
+		// TODO Refactor after clearLines() is refactored
+		const lines = this.clearLines();
+
+		if (lines.length > 0) {
+			this._state.linesCleared += lines.length;
+			this._state.score += this.calcPointsForClearing(lines.length);
+			this._state.linesUntilNextLevel -= lines.length;
+			this._state.isClearingLines = true;
+
+			this.throwEvent(TetrisEvent.LINE_CLEAR(this, lines));
+			this.throwEvent(TetrisEvent.SCORE_UPDATE(this));
+			this.throwEvent(TetrisEvent.BLOCKS(this));
+		}
+
+		return lines.length > 0;
+	}
+
 	/**
 	 * Determines whether the active piece is overlapped with any other blocks,
 	 * which is the lose condition. If detected, the gameOver handler is called.
 	 *
 	 * @return True if the game is over; otherwise false.
 	 */
-	protected checkGameOver(): boolean {
+	checkGameOver(): boolean {
 		if (this._state.isGameOver) {
 			return true;
 		}
@@ -278,15 +349,10 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		return false;
 	}
 
-	newGame(): void {
-		this.reset();
-		this.throwEvent(TetrisEvent.NEW_GAME(this));
-	}
-
 	/**
 	 * Increases the level by 1, and updates the gravity timer delay.
 	 */
-	protected increaseLevel(): void {
+	increaseLevel(): void {
 		this._state.level++;
 		this._state.linesUntilNextLevel += this._state.linesPerLevel();
 		this.updateGravityTimerDelayMs();
@@ -296,55 +362,10 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	/**
 	 * Resets the game state.
 	 */
-	protected reset(): void {
-		this._state = new TetrisState(this._state.rows, this._state.cols);
+	reset(): void {
+		this._state.reset();
 		this.numTimerPushbacks = 0;
 		this.throwEvent(TetrisEvent.RESET(this));
-	}
-
-	start(level: number = 0, useGravity: boolean = true): void {
-		if (this._state.hasStarted) {
-			return;
-		}
-
-    this._state.level = bounded(0, 19, level);
-		this._state.hasStarted = true;
-
-		this.nextPiece();
-
-		if (useGravity) {
-			this.enableGravity();
-			this.updateGravityTimerDelayMs();
-		}
-
-		this.throwEvent(TetrisEvent.START(this));
-	}
-
-	stop(): void {
-		this._state.isPaused = false;
-		this._state.isGameOver = true;
-		this._state.isClearingLines = false;
-		this._state.placePiece();
-
-		if (this.isGravityEnabled()) {
-			this.gravityTimer.stop();
-		}
-
-		this.throwEvent(TetrisEvent.STOP(this));
-	}
-
-	pause(): void {
-		if (this._state.isGameOver || this._state.isPaused || !this._state.hasStarted) {
-			return;
-		}
-
-		this._state.isPaused = true;
-
-		if (this.isGravityEnabled()) {
-			this.gravityTimer.stop();
-		}
-
-		this.throwEvent(TetrisEvent.PAUSE());
 	}
 
 	/**
@@ -363,16 +384,6 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		}
 
 		this.throwEvent(TetrisEvent.GAME_OVER(this));
-	}
-
-	resume(): void {
-		if (this._state.hasStarted && !this._state.isGameOver) {
-			this._state.isPaused = false;
-			if (this.isGravityEnabled()) {
-				this.gravityTimer.start(this.gravityDelayMsForLevel());
-			}
-			this.throwEvent(TetrisEvent.RESUME());
-		}
 	}
 
 	/**
@@ -408,14 +419,6 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		return false;
 	}
 
-	rotateClockwise(): boolean {
-		return this.handleRotation(Move.CLOCKWISE);
-	}
-
-	rotateCounterClockwise(): boolean {
-		return this.handleRotation(Move.COUNTERCLOCKWISE);
-	}
-
 	// TODO Clean up / consolidate the couple shift methods.
 	shift(rowOffset: number, colOffset: number): boolean {
 		const move = new Move(new Coord(rowOffset, colOffset), 0);
@@ -438,22 +441,6 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		}
 
 		return false;
-	}
-
-	moveLeft(): boolean {
-		return this.shift(0, -1);
-	}
-
-	moveRight(): boolean {
-		return this.shift(0, 1);
-	}
-
-	moveDown(): boolean {
-		return this.shift(1, 0);
-	}
-
-	getState(): TetrisState {
-		return TetrisState.copy(this._state);
 	}
 
 	/*********************
@@ -483,7 +470,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		return (this.eventBus) ? this.eventBus.hasListeners(eventName) : false;
 	}
 
-	// protected static record PQEntry<T>(T data, int priority) implements Comparable<PQEntry<T>> {
+	// static record PQEntry<T>(T data, int priority) implements Comparable<PQEntry<T>> {
 	// 	@Override
 	// 	public int compareTo(PQEntry<T> o) {
 	// 		return (priority - o.priority);
@@ -498,7 +485,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	 * @param goalPosition Used to calculate the priority value.
 	 * @return A new PQEntry with the given value and calculated priority.
 	 */
-	// protected PQEntry<Position> positionSearchEntry(Position newPosition, Position goalPosition) {
+	// PQEntry<Position> positionSearchEntry(Position newPosition, Position goalPosition) {
 	// 	return new PQEntry<Position>(
 	// 		new Position(newPosition),
 	// 		newPosition.sqrdist(goalPosition)
@@ -508,7 +495,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	/**
 	 * Resets the piece to the top of the board with the next shape.
 	 */
-	protected nextPiece(): void {
+	nextPiece(): void {
 		this._state.resetPiece();
 		this.throwEvent(TetrisEvent.PIECE_CREATE(this).add({
       _nextShapes: this._state.nextShapes

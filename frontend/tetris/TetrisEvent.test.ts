@@ -45,7 +45,7 @@ describe('TetrisEvent', () => {
     test('adds the given game state to the event', () => {
       const tetris = new Tetris();
       const state = new TetrisState();
-      jest.spyOn(tetris, 'state', 'get').mockReturnValue(state);
+      jest.spyOn(tetris, 'getState').mockReturnValue(state);
 
       event.withState(tetris);
       expect(event.data).toEqual({ state });
@@ -61,7 +61,7 @@ describe('TetrisEvent', () => {
       const tetris = new Tetris();
       const state = new TetrisState();
       const piece = state.piece;
-      jest.spyOn(tetris, 'state', 'get').mockReturnValue(state);
+      jest.spyOn(tetris, 'getState').mockReturnValue(state);
       jest.spyOn(state, 'piece', 'get').mockReturnValue(piece);
 
       event.withPieceData(tetris);
