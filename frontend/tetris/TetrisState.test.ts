@@ -356,13 +356,13 @@ describe('TetrisState', () => {
     describe('when the move is not either CLOCKWISE or COUNTERCLOCKWISE', () => {
       test('returns STAND', () => {
         move = Move.LEFT;
-        expect(state.validateRotation(move).equals(Move.STAND)).toEqual(true);
+        expect(state.tryRotation(move).equals(Move.STAND)).toEqual(true);
       });
     });
 
     describe('when the rotation is valid without needing shift adjustments', () => {
       test('returns a copy of the given move', () => {
-        expect(state.validateRotation(move).equals(move)).toEqual(true);
+        expect(state.tryRotation(move).equals(move)).toEqual(true);
       });
     });
 
@@ -373,7 +373,7 @@ describe('TetrisState', () => {
         state.piece.move(new Move(new Coord(0, -3), 1));
 
         const expectedMove = Move.copy(Move.RIGHT).add(Move.CLOCKWISE);
-        expect(state.validateRotation(move)).toEqual(expectedMove);
+        expect(state.tryRotation(move)).toEqual(expectedMove);
       });
     });
 
@@ -384,7 +384,7 @@ describe('TetrisState', () => {
         state.piece.move(new Move(new Coord(0, -3), 1));
         state.setCell(new Coord(state.piece.position.row, 2), 1);
 
-        expect(state.validateRotation(move).equals(Move.STAND)).toEqual(true);
+        expect(state.tryRotation(move).equals(Move.STAND)).toEqual(true);
       });
     });
   });
@@ -448,6 +448,143 @@ describe('TetrisState', () => {
         });
 
         expect(state.getFullRows()).toEqual(expectedRows);
+      });
+    });
+  });
+
+  describe('copyRow', () => {
+    let fromRow: number;
+    let toRow: number;
+
+    beforeEach(() => {
+      fromRow = 0;
+      toRow = 1;
+    });
+
+    describe('when fromRow is out of bounds', () => {
+      test('throws error', () => {
+        [-1, state.rows].forEach((row) => {
+          fromRow = row;
+          expect(() => state.copyRow(fromRow, toRow)).toThrow();
+        });
+      });
+    });
+
+    describe('when toRow is out of bounds', () => {
+      test('throws error', () => {
+        [-1, state.rows].forEach((row) => {
+          toRow = row;
+          expect(() => state.copyRow(fromRow, toRow)).toThrow();
+        });
+      });
+    });
+
+    test('copies the row', () => {
+      state = new TetrisState(5, 5);
+      [
+        0,0,0,0,0,
+        1,1,1,1,1,
+        1,1,1,1,1,
+        0,0,1,1,0,
+        1,1,1,1,1
+      ].forEach((block, index) => {
+        state.setCellByIndex(index, block);
+      });
+
+      state.copyRow(fromRow, toRow);
+      expect(state.board).toEqual([
+        0,0,0,0,0,
+        0,0,0,0,0,
+        1,1,1,1,1,
+        0,0,1,1,0,
+        1,1,1,1,1
+      ]);
+
+      state.copyRow(3, 4);
+      expect(state.board).toEqual([
+        0,0,0,0,0,
+        0,0,0,0,0,
+        1,1,1,1,1,
+        0,0,1,1,0,
+        0,0,1,1,0,
+      ]);
+    });
+  });
+
+  describe('clearRow', () => {
+    describe('when row is out of bounds', () => {
+      test('throws error', () => {
+        [-1, state.rows].forEach((row) => {
+          expect(() => state.clearRow(row)).toThrow();
+        });
+      });
+    });
+
+    test('clears the given row', () => {
+      state = new TetrisState(5, 5);
+
+      [
+        0,0,0,0,0,
+        1,1,1,1,1,
+        1,1,1,1,1,
+        0,0,1,1,0,
+        1,1,1,1,1
+      ].forEach((block, index) => {
+        state.setCellByIndex(index, block);
+      });
+
+      state.clearRow(0);
+      expect(state.board).toEqual([
+        0,0,0,0,0,
+        1,1,1,1,1,
+        1,1,1,1,1,
+        0,0,1,1,0,
+        1,1,1,1,1
+      ]);
+
+      state.clearRow(3);
+      expect(state.board).toEqual([
+        0,0,0,0,0,
+        1,1,1,1,1,
+        1,1,1,1,1,
+        0,0,0,0,0,
+        1,1,1,1,1
+      ]);
+
+      state.clearRow(2);
+      expect(state.board).toEqual([
+        0,0,0,0,0,
+        1,1,1,1,1,
+        0,0,0,0,0,
+        0,0,0,0,0,
+        1,1,1,1,1
+      ]);
+    });
+  });
+
+  describe('isRowEmpty', () => {
+    describe('when row is out of bounds', () => {
+      test('throws error', () => {
+        [-1, state.rows].forEach((row) => {
+          expect(() => state.isRowEmpty(row)).toThrow();
+        });
+      });
+    });
+
+    test('returns false', () => {
+      state = new TetrisState(5, 5);
+      [
+        0,0,0,0,0,
+        1,1,1,1,1,
+        0,1,0,0,1,
+        0,0,1,0,0,
+        0,0,0,0,0
+      ].forEach((block, index) => {
+        state.setCellByIndex(index, block);
+      });
+
+      [true, false, false, false, true].forEach((isEmpty, row) => {
+        expect(state.isRowEmpty(row)).toEqual(isEmpty);
       });
     });
   });

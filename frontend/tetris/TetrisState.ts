@@ -46,7 +46,7 @@ export default class TetrisState {
       other.rows,
       other.cols,
       other.entryCoord,
-      other._linesPerLevel
+      other.linesPerLevel
     );
 
 		copy._board = other._board.slice();
@@ -66,24 +66,28 @@ export default class TetrisState {
     return copy;
 	}
 
-  readonly rows: number;
-  readonly cols: number;
-  readonly entryCoord: Coord;
+  readonly rows: number = TetrisState.DEFAULT_NUM_ROWS;
+  readonly cols: number = TetrisState.DEFAULT_NUM_COLS;
+  readonly entryCoord: Coord = new Coord(1, TetrisState.calcEntryColumn(this.cols));
 
-  private _board: number[];
-  private _isGameOver: boolean;
-  private _isPaused: boolean;
-  private _isClearingLines: boolean;
-  private _hasStarted: boolean;
-  private _level: number;
-  private _score: number;
-  private _linesCleared: number;
-  private _numPiecesDropped: number;
-  private _linesPerLevel: number | ((level: number) => number);
-  private _linesUntilNextLevel: number;
-  private _dist: number[];
-  private _nextShapes: ShapeQueue;
-  private _piece: Piece;
+	protected readonly _linesPerLevel: number | ((level: number) => number) = TetrisState.DEFAULT_LINES_PER_LEVEL;
+
+  protected _board: number[] = [];
+  protected _isGameOver: boolean = false;
+  protected _isPaused: boolean = false;
+  protected _isClearingLines: boolean = false;
+  protected _hasStarted: boolean = false;
+  protected _level: number = 0;
+  protected _score: number = 0;
+  protected _linesCleared: number = 0;
+  protected _numPiecesDropped: number = 0;
+  protected _linesUntilNextLevel: number = 0;
+  protected _dist: number[] = [];
+  protected _nextShapes: ShapeQueue = new ShapeQueue();
+  protected _piece: Piece = new Piece(
+		new Position(this.entryCoord, 0, this._nextShapes.peek().numRotations),
+		this._nextShapes.poll()
+	);
 
   // TODO private pointsPerLineClear: number[] | ((linesCleared: number, level: number) => number);
   // TODO create function to calculate points per line cleared based property
@@ -94,14 +98,30 @@ export default class TetrisState {
 	constructor(
     rows: number = TetrisState.DEFAULT_NUM_ROWS,
     cols: number = TetrisState.DEFAULT_NUM_COLS,
-    entryCoord: Coord = TetrisState.DEFAULT_ENTRY_COORD,
+    entryCoord: Coord = new Coord(1, TetrisState.calcEntryColumn(cols)),
     linesPerLevel: number | ((level: number) => number) = TetrisState.DEFAULT_LINES_PER_LEVEL
   ) {
 		this.rows = validatePositiveInteger(rows, 'rows');
 		this.cols = validatePositiveInteger(cols, 'cols');
-		this.entryCoord = entryCoord;
 
-		this._board = Array(rows * cols).fill(0);
+		if (this.rows < TetrisState.MIN_ROWS || this.rows > TetrisState.MAX_ROWS) {
+			throw new Error(`rows must be between ${TetrisState.MIN_ROWS} and ${TetrisState.MAX_ROWS}`);
+		}
+
+		if (this.cols < TetrisState.MIN_COLS || this.cols > TetrisState.MAX_COLS) {
+			throw new Error(`cols must be between ${TetrisState.MIN_COLS} and ${TetrisState.MAX_COLS}`);
+		}
+
+		this.entryCoord = entryCoord;
+		this._linesPerLevel = linesPerLevel;
+		this.reset();
+	}
+
+	/**
+	 * Resets the state of the game.
+	 */
+	reset(): void {
+		this._board = Array(this.rows * this.cols).fill(0);
 		this._isGameOver = false;
 		this._isPaused = false;
 		this._isClearingLines = false;
@@ -110,15 +130,12 @@ export default class TetrisState {
 		this._score = 0;
 		this._linesCleared = 0;
 		this._numPiecesDropped = 0;
-    this._linesPerLevel = linesPerLevel;
 		this._linesUntilNextLevel = 0;
 		this._dist = Array(SHAPES.length).fill(0);
 		this._nextShapes = new ShapeQueue();
-
-		const shape = this._nextShapes.poll();
 		this._piece = new Piece(
-			new Position(this.entryCoord, 0, shape.numRotations),
-			shape
+			new Position(this.entryCoord, 0, this._nextShapes.peek().numRotations),
+			this._nextShapes.poll()
 		);
 	}
 
@@ -315,6 +332,7 @@ export default class TetrisState {
 	 * @return True if the active piece can move to the specified position; otherwise false.
 	 */
 	canPieceMove(move: Move): boolean {
+		// TODO game should also have to be started
 		return (
 			!this.isGameOver &&
 			this.piece.isActive &&
@@ -336,7 +354,7 @@ export default class TetrisState {
 	 * or right shift that is required to accomodate the rotation.
 	 * If the rotation is not possible, returns Move.STAND.
 	 */
-	validateRotation(move: Move): Move {
+	tryRotation(move: Move): Move {
 		if (!(move.equals(Move.CLOCKWISE) || move.equals(Move.COUNTERCLOCKWISE))) {
 			return Move.copy(Move.STAND);
 		}
@@ -401,6 +419,70 @@ export default class TetrisState {
 		}
 
 		return lines;
+	}
+
+	/**
+	 * Copies the one row's values to another.
+	 *
+	 * @param fromRow The row to copy from.
+	 * @param toRow The row to copy to.
+	 * @throws Error if either row index is out of bounds.
+	 */
+	copyRow(fromRow: number, toRow: number): void {
+		// Validate row indices
+		if (fromRow < 0 || fromRow >= this.rows) {
+			throw new Error(`fromRow ${fromRow} is out of bounds`);
+		}
+
+		if (toRow < 0 || toRow >= this.rows) {
+			throw new Error(`toRow ${toRow} is out of bounds`);
+		}
+
+		const fromRowStart = fromRow * this.cols;
+		const toRowStart = toRow * this.cols;
+
+		for (let col = 0; col < this.cols; col++) {
+			this._board[toRowStart + col] = this._board[fromRowStart + col];
+		}
+	}
+
+	/**
+	 * Clears the given row.
+	 *
+	 * @param row The row to clear.
+	 * @throws Error if the row index is out of bounds.
+	 */
+	clearRow(row: number): void {
+		// Validate row index
+		if (row < 0 || row >= this.rows) {
+			throw new Error(`Row ${row} is out of bounds`);
+		}
+
+		for (let col = 0; col < this.cols; col++) {
+			this._board[row * this.cols + col] = 0;
+		}
+	}
+
+	/**
+	 * Determines whether the given row is empty.
+	 *
+	 * @param row The row to check.
+	 * @returns True if the row is empty; otherwise false.
+	 * @throws Error if the row index is out of bounds.
+	 */
+	isRowEmpty(row: number): boolean {
+		// Validate row index
+		if (row < 0 || row >= this.rows) {
+			throw new Error(`Row ${row} is out of bounds`);
+		}
+
+		for (let i = row * this.cols; i < (row + 1) * this.cols; i++) {
+			if (this._board[i] > 0) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
