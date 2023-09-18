@@ -52,7 +52,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	 * @return True if the piece was successfully rotated; otherwise false.
 	 */
 	protected rotate(move: Move): boolean {
-		const _move = this._state.validateRotation(move);
+		const _move = this._state.tryRotation(move);
 
 		if (_move.equals(Move.STAND)) {
 			return false;
