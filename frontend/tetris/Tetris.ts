@@ -128,7 +128,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 
 			if (this.isGravityEnabled()) {
 				this.gravityTimer.delay = Tetris.PIECE_PLACED_DELAY_MS;
-				this.ticksUntilNextGravity = 3;
+				this.ticksUntilNextGravity = 2;
 			}
 		} else if (!this._state.piece.isActive) {	// The loop after piece kerplunks
 			if (this.attemptClearLines()) {

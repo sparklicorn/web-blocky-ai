@@ -127,7 +127,7 @@ export default class TetrisEvent extends Event {
 };
 
 /** Contains the names of all TetrisEvents. */
-export type TetrisEventNames =
+export type TetrisEventName =
   'NEW_GAME' | 'START' | 'STOP' | 'RESET' | 'GAMELOOP' | 'GAME_OVER' |
   'PAUSE' | 'RESUME' | 'GRAVITY_ENABLED' | 'GRAVITY_DISABLED' |
   'PIECE_CREATE' | 'PIECE_SHIFT' | 'PIECE_ROTATE' | 'PIECE_PLACED' |
