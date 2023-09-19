@@ -48,26 +48,27 @@ export default class TetrisEvent extends Event {
    * @param lines The lines that were cleared.
    */
   static LINE_CLEAR(tetris: Tetris, lines: number[]): TetrisEvent {
+    const state = tetris.getState();
     return new TetrisEvent('LINE_CLEAR', {
       lines,
-      _linesCleared: tetris.state.linesCleared,
-      _linesUntilNextLevel: tetris.state.linesUntilNextLevel
+      _linesCleared: state.linesCleared,
+      _linesUntilNextLevel: state.linesUntilNextLevel
     });
   }
 
   /** Creates a new TetrisEvent with the given game's score data. */
   static SCORE_UPDATE(tetris: Tetris): TetrisEvent {
-    return new TetrisEvent('SCORE_UPDATE').add({ _score: tetris.state.score });
+    return new TetrisEvent('SCORE_UPDATE').add({ _score: tetris.getState().score });
   }
 
   /** Creates a new TetrisEvent with the given game's level data. */
   static LEVEL_UPDATE(tetris: Tetris): TetrisEvent {
-    return new TetrisEvent('LEVEL_UPDATE').add({ _level: tetris.state.level });
+    return new TetrisEvent('LEVEL_UPDATE').add({ _level: tetris.getState().level });
   }
 
   /** Creates a new TetrisEvent with the given game's board data. */
   static BLOCKS(tetris: Tetris): TetrisEvent {
-    return new TetrisEvent('BLOCKS').add({ _board: tetris.state.board });
+    return new TetrisEvent('BLOCKS').add({ _board: tetris.getState().board });
   }
 
   /** Contains the names of all TetrisEvents. */
@@ -91,14 +92,18 @@ export default class TetrisEvent extends Event {
    * @param data The data to add.
    * @returns This TetrisEvent.
    */
-  add(data: EventData): TetrisEvent { return super.add(data) as TetrisEvent; }
+  add(data: EventData): TetrisEvent {
+    return super.add(data) as TetrisEvent;
+  }
 
   /**
    * Gets whether the event has 'state' as a data property.
    *
    * @returns True if the event has 'state' as a data property; false otherwise.
    */
-  hasState(): boolean { return this.hasData('state'); }
+  hasState(): boolean {
+    return this.hasData('state');
+  }
 
   /**
    * Adds the game state of the given Tetris instance to the event.
@@ -106,7 +111,9 @@ export default class TetrisEvent extends Event {
    * @param tetris The Tetris instance to get the game state from.
    * @returns This TetrisEvent.
    */
-  withState(tetris: Tetris): TetrisEvent { return this.add({ state: tetris.state }); }
+  withState(tetris: Tetris): TetrisEvent {
+    return this.add({ state: tetris.getState() });
+  }
 
   /**
    * Adds the current piece of the given Tetris instance to the event.
@@ -114,5 +121,14 @@ export default class TetrisEvent extends Event {
    * @param tetris The Tetris instance to get the current piece from.
    * @returns This TetrisEvent.
    */
-  withPieceData(tetris: Tetris): TetrisEvent { return this.add({ _piece: Piece.copy(tetris.state.piece) }); }
+  withPieceData(tetris: Tetris): TetrisEvent {
+    return this.add({ _piece: Piece.copy(tetris.getState().piece) });
+  }
 };
+
+/** Contains the names of all TetrisEvents. */
+export type TetrisEventName =
+  'NEW_GAME' | 'START' | 'STOP' | 'RESET' | 'GAMELOOP' | 'GAME_OVER' |
+  'PAUSE' | 'RESUME' | 'GRAVITY_ENABLED' | 'GRAVITY_DISABLED' |
+  'PIECE_CREATE' | 'PIECE_SHIFT' | 'PIECE_ROTATE' | 'PIECE_PLACED' |
+  'LINE_CLEAR' | 'SCORE_UPDATE' | 'LEVEL_UPDATE' | 'BLOCKS';

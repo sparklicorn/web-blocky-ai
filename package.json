@@ -47,6 +47,7 @@
     "babel-jest": "^29.6.4",
     "glob": "7.2.3",
     "jest": "^29.6.4",
+    "jest-environment-jsdom": "^29.7.0",
     "mkdirp": "1.0.4",
     "rollup-plugin-brotli": "3.1.0",
     "rollup-plugin-visualizer": "5.9.0",
@@ -134,7 +135,7 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "639f8eaf00f11e76217ce46aea63c76940376b0b339e48a79346d2df035166bd"
+    "hash": "188b9248c5f3653a841b6062687818acf1d9b01223ddd8ed82b02efee82ed0bd"
   },
   "scripts": {
     "test": "jest"
