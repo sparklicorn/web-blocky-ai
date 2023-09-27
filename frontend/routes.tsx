@@ -1,4 +1,3 @@
-import HelloReactView from 'Frontend/views/helloreact/HelloReactView.js';
 import MainLayout from 'Frontend/views/MainLayout.js';
 import { lazy } from 'react';
 import { createBrowserRouter, IndexRouteObject, NonIndexRouteObject, useMatches } from 'react-router-dom';
@@ -33,8 +32,8 @@ export const routes: readonly ViewRouteObject[] = [
     path: '/',
     children: [
       { index: true, element: <MainLayout /> },
-      { path: '/users', element: <HelloReactView /> },
       { path: '/about', element: <AboutView /> },
+      { path: '*', element: <MainLayout /> },
     ],
   },
 ];
