@@ -7,24 +7,44 @@ import TetrisState from '../tetris/TetrisState';
 import ITetrisGame from '../tetris/ITetrisGame';
 import { bounded } from '../util/Util';
 
+import { HorizontalLayout } from '@hilla/react-components/HorizontalLayout';
+import { Icon } from '@hilla/react-components/Icon';
+import { VerticalLayout } from '@hilla/react-components/VerticalLayout';
+
+import '@vaadin/icons';
+
 const bgColor = '#000';
 
 export default function TetrisBoard() {
   const [dimensions, setDimensions] = useState(defaultDimensions);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const boardCanvasRef = useRef<HTMLCanvasElement>(null);
+  const nextPieceCanvasRef = useRef<HTMLCanvasElement>(null);
+  const scoreRef = useRef<HTMLDivElement>(null);
+  const levelRef = useRef<HTMLDivElement>(null);
 
   let board : number[] = Array(dimensions.rows * dimensions.columns).fill(0);
-  const game: ITetrisGame = new Tetris();
-  let state: TetrisState = game.getState();
+  const state: TetrisState = new TetrisState();
+  const game: ITetrisGame = new Tetris(state);
 
   const width = () => dimensions.columns * dimensions.blockSize;
   const height = () => dimensions.rows * dimensions.blockSize;
-  const canvasContext = () => canvasRef.current?.getContext('2d');
-  const render = () => {
-    const ctx = canvasContext();
-    if (!ctx) {
-      console.log('No context');
+  const canvasContext = (canvasRef: React.RefObject<HTMLCanvasElement>) => canvasRef.current?.getContext('2d');
 
+  const renderCenterText = (
+    context: CanvasRenderingContext2D,
+    text: string,
+    fontSize: number = dimensions.blockSize
+  ) => {
+    context.fillStyle = '#fff';
+    context.font = `${fontSize}px Roboto Mono`;
+    context.textAlign = 'center';
+    context.fillText(text, width() / 2, height() / 2);
+  };
+
+  const renderBoard = () => {
+    const ctx = canvasContext(boardCanvasRef);
+    if (!ctx) {
+      console.log('No context to paint board canvas');
       return;
     }
 
@@ -33,7 +53,13 @@ export default function TetrisBoard() {
     ctx.fillRect(0, 0, width(), height());
 
     // If the game is paused or hasn't yet started, don't draw anything
-    if (!state.hasStarted || state.isPaused) {
+    if (!state.hasStarted) {
+      renderCenterText(ctx, 'Press Enter to Start', dimensions.blockSize/2);
+      return;
+    }
+
+    if (state.isPaused) {
+      renderCenterText(ctx, 'Paused');
       return;
     }
 
@@ -43,7 +69,78 @@ export default function TetrisBoard() {
         drawBlockAtIndex(index);
       }
     });
+
+    if (state.isGameOver) {
+      renderCenterText(ctx, 'Game Over');
+    }
   };
+
+  const renderNextPiece = () => {
+    const ctx = canvasContext(nextPieceCanvasRef);
+    if (!ctx) {
+      console.log('No context to paint next piece canvas');
+      return;
+    }
+
+    ctx.clearRect(0, 0, dimensions.previewSize*5, dimensions.previewSize*3*dimensions.previewAmt);
+
+    // If the game is paused or hasn't yet started, don't draw anything
+    if (!state.hasStarted || state.isPaused) {
+      return;
+    }
+
+    // Draw blocks
+    const nextShapes = state.getNextShapes(dimensions.previewAmt);
+
+    let row = 1;
+    const col = 2;
+
+    nextShapes.forEach((shape, index) => {
+      shape.getRotation(0).forEach((coord: Coord) => {
+        // Fill main color
+        ctx.fillStyle = shapeColors[shape.value][1];
+        ctx.fillRect(
+          (coord.col + col) * dimensions.previewSize,
+          (coord.row + row) * dimensions.previewSize,
+          dimensions.previewSize,
+          dimensions.previewSize
+        );
+
+        // draw top and left border lines
+        ctx.fillStyle = shapeColors[shape.value][0];
+        ctx.fillRect(
+          (coord.col + col) * dimensions.previewSize,
+          (coord.row + row) * dimensions.previewSize,
+          dimensions.previewSize,
+          1
+        );
+        ctx.fillRect(
+          (coord.col + col) * dimensions.previewSize,
+          (coord.row + row) * dimensions.previewSize,
+          1,
+          dimensions.previewSize
+        );
+
+        // draw bottom and right border lines
+        ctx.fillStyle = shapeColors[shape.value][2];
+        ctx.fillRect(
+          (coord.col + col) * dimensions.previewSize,
+          ((coord.row + row) + 1) * dimensions.previewSize - 1,
+          dimensions.previewSize,
+          1
+        );
+        ctx.fillRect(
+          ((coord.col + col) + 1) * dimensions.previewSize - 1,
+          (coord.row + row) * dimensions.previewSize,
+          1,
+          dimensions.previewSize
+        );
+      });
+
+      row += 3;
+    });
+  };
+
   const contextMenuListener = (event: MouseEvent) => event.preventDefault();
   let isMouseDown = false;
   const mouseUpListener = (_event: MouseEvent) => {
@@ -58,14 +155,14 @@ export default function TetrisBoard() {
   };
   const mouseListener = (event: MouseEvent) => {
     isMouseDown = true;
-    const rect = canvasRef.current?.getBoundingClientRect();
+    const rect = boardCanvasRef.current?.getBoundingClientRect();
     const x = event.clientX - rect!.left;
     const y = event.clientY - rect!.top;
     const row = bounded(Math.floor(y / dimensions.blockSize), 0, dimensions.rows - 1);
     const col = bounded(Math.floor(x / dimensions.blockSize), 0, dimensions.columns - 1);
     const index = row * dimensions.columns + col;
 
-    console.log(`Mouse ${event.button} at {${row}, ${col}} index ${index}`);
+    // console.log(`Mouse ${event.button} at {${row}, ${col}} index ${index}`);
 
     // If right-click, remove block at index
     if (event.button === 2) {
@@ -74,7 +171,7 @@ export default function TetrisBoard() {
         return;
       }
 
-      console.log(`Removing block at {${row}, ${col}} index ${index}`);
+      // console.log(`Removing block at {${row}, ${col}} index ${index}`);
       board[index] = 0;
       // setBlocks(blocks.map((block, i) => (i === index) ? 0 : block));
     } else {
@@ -84,29 +181,26 @@ export default function TetrisBoard() {
       }
 
       // If left-click, add block at index
-      console.log(`Adding block at {${row}, ${col}} index ${index}`);
+      // console.log(`Adding block at {${row}, ${col}} index ${index}`);
       // setBlocks(blocks.map((block, i) => (i === index) ? 1 : block));
       board[index] = 1;
     }
 
-    render();
+    renderBoard();
   };
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
+    const boardCanvas = boardCanvasRef.current;
+    if (!boardCanvas) {
       return;
     }
 
-    canvas.width = width();
-    canvas.height = height();
+    renderBoard();
 
-    render();
-
-    canvas.addEventListener('mousedown', mouseListener);
-    canvas.addEventListener('mouseup', mouseUpListener);
-    canvas.addEventListener('contextmenu', contextMenuListener);
-    canvas.addEventListener('mousemove', mouseMoveListener);
+    // boardCanvas.addEventListener('mousedown', mouseListener);
+    // boardCanvas.addEventListener('mouseup', mouseUpListener);
+    boardCanvas.addEventListener('contextmenu', contextMenuListener);
+    // boardCanvas.addEventListener('mousemove', mouseMoveListener);
 
     const keyListeners = {
       ArrowLeft: () => game.moveLeft(),
@@ -126,10 +220,9 @@ export default function TetrisBoard() {
       Space: () => {}, // Disable spacebar scrolling
       // Z to rotate clockwise
       z: () => {
-        console.log('Rotating clockwise');
         if (!game.rotateClockwise()) {
+          // log the game state to see what happened
           console.log('Cannot rotate clockwise');
-          // log the game state
           console.log(JSON.stringify(game.getState()));
         }
       },
@@ -144,10 +237,10 @@ export default function TetrisBoard() {
     });
 
     return () => {
-      canvas.removeEventListener('mousedown', mouseListener);
-      canvas.removeEventListener('mouseup', mouseUpListener);
-      canvas.removeEventListener('contextmenu', contextMenuListener);
-      canvas.removeEventListener('mousemove', mouseMoveListener);
+      // boardCanvas.removeEventListener('mousedown', mouseListener);
+      // boardCanvas.removeEventListener('mouseup', mouseUpListener);
+      boardCanvas.removeEventListener('contextmenu', contextMenuListener);
+      // boardCanvas.removeEventListener('mousemove', mouseMoveListener);
     };
   }, [dimensions]);
 
@@ -159,7 +252,7 @@ export default function TetrisBoard() {
   }
 
   const drawBlock = (row: number, col: number) => {
-    const canvas = canvasRef.current;
+    const canvas = boardCanvasRef.current;
     const context = (canvas) ? canvas.getContext('2d') : null;
 
     // fill rectangle with the given shape color at given row and column
@@ -168,6 +261,10 @@ export default function TetrisBoard() {
 
       // Fill in the center of the rectangle
       context.fillStyle = shapeColors[shapeVal][1];
+      // If the game is over, add partial transparency to fillStyle
+      if (state.isGameOver) {
+        context.fillStyle += '40';
+      }
       context.fillRect(
         col * dimensions.blockSize,
         row * dimensions.blockSize,
@@ -175,8 +272,11 @@ export default function TetrisBoard() {
         dimensions.blockSize
       );
 
-    //   // draw top and left border lines
+      // draw top and left border lines
       context.fillStyle = shapeColors[shapeVal][0];
+      if (state.isGameOver) {
+        context.fillStyle += '40';
+      }
       context.fillRect(
         col * dimensions.blockSize,
         row * dimensions.blockSize,
@@ -190,8 +290,11 @@ export default function TetrisBoard() {
         dimensions.blockSize
       );
 
-    //   // draw bottom and right border lines
+      // draw bottom and right border lines
       context.fillStyle = shapeColors[shapeVal][2];
+      if (state.isGameOver) {
+        context.fillStyle += '40';
+      }
       context.fillRect(
         col * dimensions.blockSize,
         (row + 1) * dimensions.blockSize - 1,
@@ -205,52 +308,114 @@ export default function TetrisBoard() {
         dimensions.blockSize
       );
     } else {
-      console.warn('No context');
+      console.warn('No graphics context to draw block');
     }
   };
 
   const mapStateToBoard = (): void => {
-    board = state.board.slice();
+    board = state.board;
 
-    if (!state.piece.isActive) {
-      return;
+    if (state.piece.isActive) {
+      state.piece.blockCoords.forEach(
+        (coord: Coord) => board[coord.row * state.cols + coord.col] = state.piece.shape.value
+      );
     }
+  };
 
-    state.piece.blockCoords.forEach((coord: Coord) => board[coord.row * state.cols + coord.col] = state.piece.shape.value);
+  const updateLevelLabel = (): void => {
+    levelRef.current!.innerText = `Level\n${state.level}`;
+  };
+
+  const updateScoreLabel = (): void => {
+    scoreRef.current!.innerText = `Score\n${state.score}`;
   };
 
   const onEvent = ((event: TetrisEvent): void => {
     console.log(`Event: ${event.name}`);
 
-    if (event.hasState()) {
-      state = event.data.state;
+    if (event.name === TetrisEvent.GAME_OVER.name) {
+      console.log(JSON.stringify(event.data.state));
+    }
 
-      if (event.name === TetrisEvent.GAME_OVER.name) {
-        console.log('Game over');
-        console.log(JSON.stringify(state));
-      }
-
-
-
-    } else {
-      Object.assign(state, event.data);
+    if (
+      event.name === TetrisEvent.LEVEL_UPDATE.name ||
+      event.name === TetrisEvent.SCORE_UPDATE.name ||
+      event.name === TetrisEvent.START.name
+    ) {
+      updateLevelLabel();
+      updateScoreLabel();
     }
 
 		mapStateToBoard();
-		render();
+		renderBoard();
+    renderNextPiece();
 	}) as EventListener;
 
   TetrisEvent.ALL.forEach((eventName) => game.registerEventListener(eventName, onEvent));
 
+  const labelStyle = {
+    font: '16px Roboto Mono',
+    color: '#fff',
+  };
+
   return (
-    <div>
-      <canvas
-        ref={canvasRef}
-        width={width()}
-        height={height()}
-        className="border rounded-s border-contrast-50"
-      />
-    </div>
+    <VerticalLayout theme="spacing">
+      <HorizontalLayout theme="spacing">
+        <canvas
+          ref={boardCanvasRef}
+          width={width()}
+          height={height()}
+          className="border rounded-s border-contrast-50"
+          style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
+        />
+        <canvas
+          ref={nextPieceCanvasRef}
+          width={dimensions.previewSize * 5}
+          height={dimensions.previewSize * 4 * dimensions.previewAmt}
+          style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
+        />
+        <VerticalLayout theme="spacing">
+          <div
+            ref={scoreRef}
+            style={labelStyle}
+          ></div>
+          <div
+            ref={levelRef}
+            style={labelStyle}
+          ></div>
+        </VerticalLayout>
+      </HorizontalLayout>
+      <VerticalLayout
+        id='controls'
+        theme='spacing padding'
+        className='border rounded-s border-contrast-50'
+        style={labelStyle}
+      >
+        <HorizontalLayout
+          theme='spacing'
+          style={{ width: '100%' }}
+        >
+          <div><strong>Controls</strong></div>
+          <div
+            style={{ flexGrow: 1 }}
+          >
+            { /* Icon that is right-aligned in its parent div */ }
+            <Icon
+              icon="vaadin:close"
+              style={{
+                color: 'darkred',
+                float: 'right'
+              }}
+              // On click, hide the controls VerticalLayout
+              onClick={() => document.getElementById('controls')!.style.display = 'none'}
+            />
+          </div>
+        </HorizontalLayout>
+        <div>[ <strong>ENTER</strong> ] Start / Pause / Resume</div>
+        <div>[ <strong>ARROW KEYS &#8592; &#8593; &#8594;</strong> ] Move</div>
+        <div>[ <strong>Z, X</strong> ]: Rotate Clockwise, or Counterclockwise</div>
+      </VerticalLayout>
+    </VerticalLayout>
   );
 }
 
@@ -258,10 +423,12 @@ const defaultDimensions = {
   rows: 20,
   columns: 10,
   blockSize: 24,
+  previewSize: 16,
+  previewAmt: 4,
 };
 
 const shapeColors = [
-  ['#000', '#000', '#000'], // empty
+  ['#000000', '#000000', '#000000'], // empty
   // O = yellow
   ['#FFFF00', '#DFDF00', '#AFAF00'],
   // I = cyan
