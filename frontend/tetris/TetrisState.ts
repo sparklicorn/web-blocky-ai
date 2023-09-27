@@ -46,7 +46,7 @@ export default class TetrisState {
       other.rows,
       other.cols,
       other.entryCoord,
-      other.linesPerLevel
+      other._linesPerLevel
     );
 
 		copy._board = other._board.slice();
@@ -130,7 +130,7 @@ export default class TetrisState {
 		this._score = 0;
 		this._linesCleared = 0;
 		this._numPiecesDropped = 0;
-		this._linesUntilNextLevel = 0;
+		this._linesUntilNextLevel = this.linesPerLevel();
 		this._dist = Array(SHAPES.length).fill(0);
 		this._nextShapes = new ShapeQueue();
 		this._piece = new Piece(
