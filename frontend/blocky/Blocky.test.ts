@@ -1,9 +1,9 @@
 import EventBus from "../event/EventBus";
 import { Event, EventListener } from "../event/Event";
 import Move from "../structs/Move";
-import Tetris from "./Tetris";
-import TetrisEvent, { TetrisEventName } from "./TetrisEvent";
-import TetrisState from "./TetrisState";
+import Blocky from "./Blocky";
+import BlockyEvent, { BlockyEventName } from "./BlockyEvent";
+import BlockyState from "./BlockyState";
 
 const mockTimer = {
   delayNextTick: jest.fn(),
@@ -13,59 +13,59 @@ const mockTimer = {
 
 jest.mock('../util/Timer', () => jest.fn().mockImplementation(() => mockTimer));
 
-describe("Tetris", () => {
-  let state: TetrisState;
-  let tetris: Tetris;
+describe("Blocky", () => {
+  let state: BlockyState;
+  let blocky: Blocky;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    state = new TetrisState();
-    tetris = new Tetris(state);
-    tetris.newGame();
+    state = new BlockyState();
+    blocky = new Blocky(state);
+    blocky.newGame();
   });
 
-  const expectEventsThrown = (eventNames: TetrisEventName[], exe: () => any) => {
-    const mockEvents = eventNames.map(eventName => new TetrisEvent(eventName));
+  const expectEventsThrown = (eventNames: BlockyEventName[], exe: () => any) => {
+    const mockEvents = eventNames.map(eventName => new BlockyEvent(eventName));
     eventNames.forEach((eventName, index) => {
-      jest.spyOn(TetrisEvent, eventName).mockReturnValue(mockEvents[index]);
+      jest.spyOn(BlockyEvent, eventName).mockReturnValue(mockEvents[index]);
     });
-    jest.spyOn(tetris, 'throwEvent');
+    jest.spyOn(blocky, 'throwEvent');
     exe();
     eventNames.forEach((eventName, index) => {
-      expect(TetrisEvent[eventName]).toHaveBeenCalled();
-      expect(tetris.throwEvent).toHaveBeenCalledWith(mockEvents[index]);
+      expect(BlockyEvent[eventName]).toHaveBeenCalled();
+      expect(blocky.throwEvent).toHaveBeenCalledWith(mockEvents[index]);
     });
   };
 
-  const expectEventThrown = (eventName: TetrisEventName, exe: () => any) => expectEventsThrown([eventName], exe);
+  const expectEventThrown = (eventName: BlockyEventName, exe: () => any) => expectEventsThrown([eventName], exe);
 
-  const expectEventNotThrown = (eventName: TetrisEventName, exe: () => any) => {
-    const mockEvent = new TetrisEvent(eventName);
-    jest.spyOn(TetrisEvent, eventName).mockReturnValue(mockEvent);
-    jest.spyOn(tetris, 'throwEvent');
+  const expectEventNotThrown = (eventName: BlockyEventName, exe: () => any) => {
+    const mockEvent = new BlockyEvent(eventName);
+    jest.spyOn(BlockyEvent, eventName).mockReturnValue(mockEvent);
+    jest.spyOn(blocky, 'throwEvent');
     exe();
-    expect(TetrisEvent[eventName]).not.toHaveBeenCalled();
-    expect(tetris.throwEvent).not.toHaveBeenCalledWith(mockEvent);
+    expect(BlockyEvent[eventName]).not.toHaveBeenCalled();
+    expect(blocky.throwEvent).not.toHaveBeenCalledWith(mockEvent);
   };
 
   const expectNoEventsThrown = (exe: () => any) => {
-    jest.spyOn(tetris, 'throwEvent');
+    jest.spyOn(blocky, 'throwEvent');
     exe();
-    expect(tetris.throwEvent).not.toHaveBeenCalled();
+    expect(blocky.throwEvent).not.toHaveBeenCalled();
   };
 
   const expectMethodsCalled = (methodNames: string[], exe: () => any) => {
-    const _tetris = tetris as any;
-    methodNames.forEach(methodName => jest.spyOn(_tetris, methodName));
+    const _blocky = blocky as any;
+    methodNames.forEach(methodName => jest.spyOn(_blocky, methodName));
     exe();
-    methodNames.forEach(methodName => expect(_tetris[methodName]).toHaveBeenCalled());
+    methodNames.forEach(methodName => expect(_blocky[methodName]).toHaveBeenCalled());
   };
 
   const expectMethodsNotCalled = (methodNames: string[], exe: () => any) => {
-    const _tetris = tetris as any;
-    methodNames.forEach(methodName => jest.spyOn(_tetris, methodName));
+    const _blocky = blocky as any;
+    methodNames.forEach(methodName => jest.spyOn(_blocky, methodName));
     exe();
-    methodNames.forEach(methodName => expect(_tetris[methodName]).not.toHaveBeenCalled());
+    methodNames.forEach(methodName => expect(_blocky[methodName]).not.toHaveBeenCalled());
   };
 
   const expectMethodCalled = (methodName: string, exe: () => any) => expectMethodsCalled([methodName], exe);
@@ -90,8 +90,8 @@ describe("Tetris", () => {
 
   describe('newGame', () => {
     test('defers to reset and throws NEW_GAME event', () => {
-      expectMethodCalled('reset', () => tetris.newGame());
-      expectEventThrown('NEW_GAME', () => tetris.newGame());
+      expectMethodCalled('reset', () => blocky.newGame());
+      expectEventThrown('NEW_GAME', () => blocky.newGame());
     });
   });
 
@@ -102,20 +102,20 @@ describe("Tetris", () => {
       });
 
       test('does not throw an event', () => {
-        expectNoEventsThrown(() => tetris.start(0, false));
+        expectNoEventsThrown(() => blocky.start(0, false));
       });
     });
 
     describe('when the game has not yet started', () => {
       test('sets to the given level', () => {
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(level => {
-          tetris.newGame();
-          tetris.start(level, false);
+          blocky.newGame();
+          blocky.start(level, false);
           expect(state.level).toBe(level);
         });
       });
 
-      const startWithoutGravity = () => tetris.start(0, false);
+      const startWithoutGravity = () => blocky.start(0, false);
 
       test('defers to nextPiece', () => {
         expectMethodCalled('nextPiece', startWithoutGravity);
@@ -129,7 +129,7 @@ describe("Tetris", () => {
         test('enables gravity and sets the timer delay', () => {
           expectMethodsCalled(
             [ 'enableGravity', 'updateGravityTimerDelayMs' ],
-            () => tetris.start(0, true)
+            () => blocky.start(0, true)
           );
         });
       });
@@ -147,24 +147,24 @@ describe("Tetris", () => {
 
   describe('stop', () => {
     test('sets isPaused, isGameOver, isClearingLines', () => {
-      tetris.stop();
+      blocky.stop();
       expect(state.isPaused).toBe(false);
       expect(state.isGameOver).toBe(true);
       expect(state.isClearingLines).toBe(false);
     });
 
     test('defers to state placePiece and throws STOP event', () => {
-      expectStateMethodCalled('placePiece', () => tetris.stop());
-      expectEventThrown('STOP', () => tetris.stop());
+      expectStateMethodCalled('placePiece', () => blocky.stop());
+      expectEventThrown('STOP', () => blocky.stop());
     });
 
     describe('when gravity is enabled', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
       });
 
       test('stops the gravity timer', () => {
-        tetris.stop();
+        blocky.stop();
         expect(mockTimer.stop).toHaveBeenCalled();
       });
     });
@@ -177,7 +177,7 @@ describe("Tetris", () => {
       });
 
       test('does not throw PAUSE event', () => {
-        expectNoEventsThrown(() => tetris.pause());
+        expectNoEventsThrown(() => blocky.pause());
       });
     });
 
@@ -187,7 +187,7 @@ describe("Tetris", () => {
       });
 
       test('does not throw PAUSE event', () => {
-        expectNoEventsThrown(() => tetris.pause());
+        expectNoEventsThrown(() => blocky.pause());
       });
     });
 
@@ -197,7 +197,7 @@ describe("Tetris", () => {
       });
 
       test('does not throw PAUSE event', () => {
-        expectNoEventsThrown(() => tetris.pause());
+        expectNoEventsThrown(() => blocky.pause());
       });
     });
 
@@ -209,21 +209,21 @@ describe("Tetris", () => {
       });
 
       test('sets isPaused on state', () => {
-        tetris.pause();
+        blocky.pause();
         expect(state.isPaused).toBe(true);
       });
 
       test('throws PAUSE event', () => {
-        expectEventThrown('PAUSE', () => tetris.pause());
+        expectEventThrown('PAUSE', () => blocky.pause());
       });
 
       describe('when gravity is enabled', () => {
         beforeEach(() => {
-          jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+          jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
         });
 
         test('stops the gravity timer', () => {
-          tetris.pause();
+          blocky.pause();
           expect(mockTimer.stop).toHaveBeenCalled();
         });
       });
@@ -237,7 +237,7 @@ describe("Tetris", () => {
       });
 
       test('does not throw RESUME event', () => {
-        expectNoEventsThrown(() => tetris.resume());
+        expectNoEventsThrown(() => blocky.resume());
       });
     });
 
@@ -252,7 +252,7 @@ describe("Tetris", () => {
         });
 
         test('does not throw RESUME event', () => {
-          expectNoEventsThrown(() => tetris.resume());
+          expectNoEventsThrown(() => blocky.resume());
         });
       });
 
@@ -262,23 +262,23 @@ describe("Tetris", () => {
         });
 
         test('sets isPaused', () => {
-          tetris.resume();
+          blocky.resume();
           expect(state.isPaused).toBe(false);
         });
 
         test('throws RESUME event', () => {
-          expectEventThrown('RESUME', () => tetris.resume());
+          expectEventThrown('RESUME', () => blocky.resume());
         });
 
         describe('when gravity is enabled', () => {
           beforeEach(() => {
-            jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+            jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
           });
 
           test('starts the gravity timer', () => {
             const gravityDelayMs = 1234;
-            jest.spyOn(tetris, 'gravityDelayMsForLevel').mockReturnValue(gravityDelayMs);
-            tetris.resume();
+            jest.spyOn(blocky, 'gravityDelayMsForLevel').mockReturnValue(gravityDelayMs);
+            blocky.resume();
             expect(mockTimer.start).toHaveBeenCalledWith(gravityDelayMs);
           });
         });
@@ -288,53 +288,53 @@ describe("Tetris", () => {
 
   describe('moveLeft', () => {
     test('defers to shift with the appropriate offset', () => {
-      jest.spyOn(tetris, 'shift');
-      tetris.moveLeft();
-      expect(tetris.shift).toHaveBeenCalledWith(0, -1);
+      jest.spyOn(blocky, 'shift');
+      blocky.moveLeft();
+      expect(blocky.shift).toHaveBeenCalledWith(0, -1);
     });
   });
 
   describe('moveRight', () => {
     test('defers to shift with the appropriate offset', () => {
-      jest.spyOn(tetris, 'shift');
-      tetris.moveRight();
-      expect(tetris.shift).toHaveBeenCalledWith(0, 1);
+      jest.spyOn(blocky, 'shift');
+      blocky.moveRight();
+      expect(blocky.shift).toHaveBeenCalledWith(0, 1);
     });
   });
 
   describe('moveDown', () => {
     test('defers to shift with the appropriate offset', () => {
-      jest.spyOn(tetris, 'shift');
-      tetris.moveDown();
-      expect(tetris.shift).toHaveBeenCalledWith(1, 0);
+      jest.spyOn(blocky, 'shift');
+      blocky.moveDown();
+      expect(blocky.shift).toHaveBeenCalledWith(1, 0);
     });
   });
 
   describe('rotateClockwise', () => {
     test('defers to handleRotation with the appropriate rotation', () => {
-      jest.spyOn(tetris, 'handleRotation');
-      tetris.rotateClockwise();
-      expect(tetris.handleRotation).toHaveBeenCalledWith(Move.CLOCKWISE);
+      jest.spyOn(blocky, 'handleRotation');
+      blocky.rotateClockwise();
+      expect(blocky.handleRotation).toHaveBeenCalledWith(Move.CLOCKWISE);
     });
   });
 
   describe('rotateCounterClockwise', () => {
     test('defers to handleRotation with the appropriate rotation', () => {
-      jest.spyOn(tetris, 'handleRotation');
-      tetris.rotateCounterClockwise();
-      expect(tetris.handleRotation).toHaveBeenCalledWith(Move.COUNTERCLOCKWISE);
+      jest.spyOn(blocky, 'handleRotation');
+      blocky.rotateCounterClockwise();
+      expect(blocky.handleRotation).toHaveBeenCalledWith(Move.COUNTERCLOCKWISE);
     });
   });
 
   describe('getState', () => {
     test('returns a copy of the game state', () => {
-      const expectedState = new TetrisState();
-      jest.spyOn(TetrisState, 'copy').mockReturnValue(expectedState);
+      const expectedState = new BlockyState();
+      jest.spyOn(BlockyState, 'copy').mockReturnValue(expectedState);
 
-      const state = tetris.getState();
+      const state = blocky.getState();
 
       expect(state).toBe(expectedState);
-      expect(TetrisState.copy).toHaveBeenCalled();
+      expect(BlockyState.copy).toHaveBeenCalled();
     });
   });
 
@@ -343,8 +343,8 @@ describe("Tetris", () => {
       for (let lines = 0; lines <= 4; lines++) {
         for (let level = 0; level < 20; level++) {
           jest.spyOn(state, 'level', 'get').mockReturnValue(level);
-          expect(tetris.calcPointsForClearing(lines)).toBe(
-            Tetris.POINTS_BY_LINES_CLEARED[lines] * (level + 1)
+          expect(blocky.calcPointsForClearing(lines)).toBe(
+            Blocky.POINTS_BY_LINES_CLEARED[lines] * (level + 1)
           );
         }
       }
@@ -360,7 +360,7 @@ describe("Tetris", () => {
     });
 
     test('checks the rotation against the state', () => {
-      tetris.rotate(move);
+      blocky.rotate(move);
       expect(state.tryRotation).toHaveBeenCalledWith(move);
     });
 
@@ -370,19 +370,19 @@ describe("Tetris", () => {
       });
 
       test('returns false', () => {
-        expect(tetris.rotate(move)).toBe(false);
+        expect(blocky.rotate(move)).toBe(false);
       });
     });
 
     describe('when the rotation is possible', () => {
       test('throws PIECE_ROTATE event and returns true', () => {
-        expectEventThrown('PIECE_ROTATE', () => tetris.rotate(move));
-        expect(tetris.rotate(move)).toBe(true);
+        expectEventThrown('PIECE_ROTATE', () => blocky.rotate(move));
+        expect(blocky.rotate(move)).toBe(true);
       });
 
       test('rotates the piece', () => {
         jest.spyOn(state.piece, 'move');
-        tetris.rotate(move);
+        blocky.rotate(move);
         expect(state.piece.move).toHaveBeenCalledWith(move);
       });
     });
@@ -401,13 +401,13 @@ describe("Tetris", () => {
       });
 
       test('throws PIECE_SHIFT event and returns true', () => {
-        expectEventThrown('PIECE_SHIFT', () => tetris.shiftPiece(move));
-        expect(tetris.shiftPiece(move)).toBe(true);
+        expectEventThrown('PIECE_SHIFT', () => blocky.shiftPiece(move));
+        expect(blocky.shiftPiece(move)).toBe(true);
       });
 
       test('shifts the piece', () => {
         jest.spyOn(state.piece, 'move');
-        tetris.shiftPiece(move);
+        blocky.shiftPiece(move);
         expect(state.piece.move).toHaveBeenCalledWith(move);
       });
     });
@@ -418,20 +418,20 @@ describe("Tetris", () => {
       });
 
       test('does not throw PIECE_SHIFT event returns false', () => {
-        expectNoEventsThrown(() => tetris.shiftPiece(move));
-        expect(tetris.shiftPiece(move)).toBe(false);
+        expectNoEventsThrown(() => blocky.shiftPiece(move));
+        expect(blocky.shiftPiece(move)).toBe(false);
       });
     });
   });
 
   describe('plotPiece', () => {
     test('defers to state placePiece', () => {
-      expectStateMethodCalled('placePiece', () => tetris.plotPiece());
+      expectStateMethodCalled('placePiece', () => blocky.plotPiece());
     });
 
     test('throws PIECE_PLACED, BLOCKS events', () => {
-      expectEventThrown('PIECE_PLACED', () => tetris.plotPiece());
-      expectEventThrown('BLOCKS', () => tetris.plotPiece());
+      expectEventThrown('PIECE_PLACED', () => blocky.plotPiece());
+      expectEventThrown('BLOCKS', () => blocky.plotPiece());
     });
   });
 
@@ -442,12 +442,12 @@ describe("Tetris", () => {
       });
 
       test('returns an empty array', () => {
-        expect(tetris.clearLines()).toEqual([]);
+        expect(blocky.clearLines()).toEqual([]);
       });
 
       test('does not modify the board', () => {
         const boardBefore = state.board;
-        tetris.clearLines();
+        blocky.clearLines();
         expect(state.board).toEqual(boardBefore);
       });
     });
@@ -482,19 +482,19 @@ describe("Tetris", () => {
       ];
 
       beforeEach(() => {
-        state = new TetrisState(board.length / cols, cols);
-        tetris = new Tetris(state);
+        state = new BlockyState(board.length / cols, cols);
+        blocky = new Blocky(state);
         board.forEach((block, index) => {
           state.setCellByIndex(index, block);
         });
       });
 
       test('returns an array of the full row indices', () => {
-        expect(tetris.clearLines()).toEqual(fullRows);
+        expect(blocky.clearLines()).toEqual(fullRows);
       });
 
       test('shifts the appropriate non-full rows down', () => {
-        tetris.clearLines();
+        blocky.clearLines();
         expect(state.board).toEqual(expectedBoardAfterClearing);
       });
     });
@@ -502,36 +502,36 @@ describe("Tetris", () => {
 
   describe('isGravityEnabled', () => {
     test('returns whether gravity is enabled', () => {
-      expect(tetris.isGravityEnabled()).toBe(true);
-      tetris.disableGravity();
-      expect(tetris.isGravityEnabled()).toBe(false);
-      tetris.enableGravity();
-      expect(tetris.isGravityEnabled()).toBe(true);
+      expect(blocky.isGravityEnabled()).toBe(true);
+      blocky.disableGravity();
+      expect(blocky.isGravityEnabled()).toBe(false);
+      blocky.enableGravity();
+      expect(blocky.isGravityEnabled()).toBe(true);
     });
   });
 
   describe('disableGravity', () => {
     describe('when gravity is already disabled', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(false);
+        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(false);
       });
 
       test('does not throw GRAVITY_DISABLED event', () => {
-        expectNoEventsThrown(() => tetris.disableGravity());
+        expectNoEventsThrown(() => blocky.disableGravity());
       });
     });
 
     describe('when gravity is enabled', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
       });
 
       test('throws GRAVITY_DISABLED event', () => {
-        expectEventThrown('GRAVITY_DISABLED', () => tetris.disableGravity());
+        expectEventThrown('GRAVITY_DISABLED', () => blocky.disableGravity());
       });
 
       test('stops the gravity timer', () => {
-        tetris.disableGravity();
+        blocky.disableGravity();
         expect(mockTimer.stop).toHaveBeenCalled();
       });
     });
@@ -540,17 +540,17 @@ describe("Tetris", () => {
   describe('enableGravity', () => {
     describe('when gravity is already enabled', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
       });
 
       test('does not throw any events', () => {
-        expectNoEventsThrown(() => tetris.enableGravity());
+        expectNoEventsThrown(() => blocky.enableGravity());
       });
     });
 
     describe('when gravity is disabled', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(false);
+        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(false);
       });
 
       describe('when the game is over', () => {
@@ -559,7 +559,7 @@ describe("Tetris", () => {
         });
 
         test('does not start the gravity timer', () => {
-          tetris.enableGravity();
+          blocky.enableGravity();
           expect(mockTimer.start).not.toHaveBeenCalled();
         });
       });
@@ -575,7 +575,7 @@ describe("Tetris", () => {
           });
 
           test('does not start the gravity timer', () => {
-            tetris.enableGravity();
+            blocky.enableGravity();
             expect(mockTimer.start).not.toHaveBeenCalled();
           });
         });
@@ -591,7 +591,7 @@ describe("Tetris", () => {
             });
 
             test('does not start the gravity timer', () => {
-              tetris.enableGravity();
+              blocky.enableGravity();
               expect(mockTimer.start).not.toHaveBeenCalled();
             });
           });
@@ -603,8 +603,8 @@ describe("Tetris", () => {
 
             test('starts the gravity timer', () => {
               const gravityDelayMs = 1234;
-              jest.spyOn(tetris, 'gravityDelayMsForLevel').mockReturnValue(gravityDelayMs);
-              tetris.enableGravity();
+              jest.spyOn(blocky, 'gravityDelayMsForLevel').mockReturnValue(gravityDelayMs);
+              blocky.enableGravity();
               expect(mockTimer.start).toHaveBeenCalledWith(gravityDelayMs);
             });
           });
@@ -617,17 +617,17 @@ describe("Tetris", () => {
     const gravityDelayMs = 1234;
 
     beforeEach(() => {
-      jest.spyOn(tetris, 'gravityDelayMsForLevel').mockReturnValue(gravityDelayMs);
+      jest.spyOn(blocky, 'gravityDelayMsForLevel').mockReturnValue(gravityDelayMs);
     });
 
     test('returns the delay', () => {
-      expect(tetris.updateGravityTimerDelayMs()).toBe(gravityDelayMs);
+      expect(blocky.updateGravityTimerDelayMs()).toBe(gravityDelayMs);
     });
 
     // TODO Test that the timer delay is set
     // describe('when gravity is enabled', () => {
     //   beforeEach(() => {
-    //     jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+    //     jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
     //   });
 
     //   test('sets the delay appropriately', () => {
@@ -643,7 +643,7 @@ describe("Tetris", () => {
       });
 
       test('returns false', () => {
-        expect(tetris.attemptClearLines()).toBe(false);
+        expect(blocky.attemptClearLines()).toBe(false);
       });
     });
 
@@ -653,7 +653,7 @@ describe("Tetris", () => {
       beforeEach(() => {
         fullRows = [1, 2, 3];
         jest.spyOn(state, 'getFullRows').mockReturnValue(fullRows);
-        jest.spyOn(tetris, 'calcPointsForClearing').mockReturnValue(fullRows.length);
+        jest.spyOn(blocky, 'calcPointsForClearing').mockReturnValue(fullRows.length);
       });
 
       test('updates state linesCleared, score, linesUntilNextLevel, and isClearingLines', () => {
@@ -662,7 +662,7 @@ describe("Tetris", () => {
         const linesUntilNextLevelBefore = state.linesUntilNextLevel;
         const isClearingLinesBefore = state.isClearingLines;
 
-        tetris.attemptClearLines();
+        blocky.attemptClearLines();
 
         expect(state.linesCleared).toBe(linesClearedBefore + fullRows.length);
         expect(state.score).toBe(scoreBefore + fullRows.length);
@@ -671,19 +671,19 @@ describe("Tetris", () => {
       });
 
       test('throws LINE_CLEAR, SCORE_UPDATE, and BLOCKS events', () => {
-        expectEventsThrown(['LINE_CLEAR', 'SCORE_UPDATE', 'BLOCKS'], () => tetris.attemptClearLines());
+        expectEventsThrown(['LINE_CLEAR', 'SCORE_UPDATE', 'BLOCKS'], () => blocky.attemptClearLines());
       });
 
       test('returns true', () => {
-        expect(tetris.attemptClearLines()).toBe(true);
+        expect(blocky.attemptClearLines()).toBe(true);
       });
     });
   });
 
   describe('gameloop', () => {
     beforeEach(() => {
-      tetris.disableGravity();
-      tetris.start(0, false);
+      blocky.disableGravity();
+      blocky.start(0, false);
     });
 
     describe('when the game is over', () => {
@@ -692,7 +692,7 @@ describe("Tetris", () => {
       });
 
       test('does not throw GAMELOOP event', () => {
-        expectEventNotThrown('GAMELOOP', () => tetris.gameloop());
+        expectEventNotThrown('GAMELOOP', () => blocky.gameloop());
       });
     });
 
@@ -702,7 +702,7 @@ describe("Tetris", () => {
       });
 
       test('does nothing, does not throw GAMELOOP event', () => {
-        expectEventNotThrown('GAMELOOP', () => tetris.gameloop());
+        expectEventNotThrown('GAMELOOP', () => blocky.gameloop());
       });
     });
 
@@ -713,7 +713,7 @@ describe("Tetris", () => {
       });
 
       test('throws GAMELOOP event', () => {
-        expectEventThrown('GAMELOOP', () => tetris.gameloop());
+        expectEventThrown('GAMELOOP', () => blocky.gameloop());
       });
 
       describe('when the piece is not active', () => {
@@ -723,37 +723,37 @@ describe("Tetris", () => {
 
         describe('when there are no lines to clear', () => {
           beforeEach(() => {
-            jest.spyOn(tetris, 'attemptClearLines').mockReturnValue(false);
+            jest.spyOn(blocky, 'attemptClearLines').mockReturnValue(false);
           });
 
           test('Sets up the next piece', () => {
-            expectMethodCalled('nextPiece', () => tetris.gameloop());
+            expectMethodCalled('nextPiece', () => blocky.gameloop());
           });
 
           describe('when the gameover condition is true', () => {
             beforeEach(() => {
-              jest.spyOn(tetris, 'checkGameOver').mockReturnValue(true);
+              jest.spyOn(blocky, 'checkGameOver').mockReturnValue(true);
             });
 
             test('returns without throwing GAMELOOP event', () => {
-              expectEventNotThrown('GAMELOOP', () => tetris.gameloop());
+              expectEventNotThrown('GAMELOOP', () => blocky.gameloop());
             });
           });
 
           describe('when the gameover condition is false', () => {
             beforeEach(() => {
-              jest.spyOn(tetris, 'checkGameOver').mockReturnValue(false);
+              jest.spyOn(blocky, 'checkGameOver').mockReturnValue(false);
             });
 
             test('throws GAMELOOP event', () => {
-              expectEventThrown('GAMELOOP', () => tetris.gameloop());
+              expectEventThrown('GAMELOOP', () => blocky.gameloop());
             });
           });
         });
 
         describe('when there are full lines', () => {
           beforeEach(() => {
-            jest.spyOn(tetris, 'attemptClearLines').mockReturnValue(true);
+            jest.spyOn(blocky, 'attemptClearLines').mockReturnValue(true);
           });
 
           describe('when enough lines have cleared', () => {
@@ -762,7 +762,7 @@ describe("Tetris", () => {
             });
 
             test('increases the level', () => {
-              expectMethodCalled('increaseLevel', () => tetris.gameloop());
+              expectMethodCalled('increaseLevel', () => blocky.gameloop());
             });
           });
 
@@ -772,7 +772,7 @@ describe("Tetris", () => {
             });
 
             test('does not increase the level', () => {
-              expectMethodNotCalled('increaseLevel', () => tetris.gameloop());
+              expectMethodNotCalled('increaseLevel', () => blocky.gameloop());
             });
           });
         });
@@ -789,13 +789,13 @@ describe("Tetris", () => {
           });
 
           test('plots the piece blocks to the board', () => {
-            expectMethodCalled('plotPiece', () => tetris.gameloop());
+            expectMethodCalled('plotPiece', () => blocky.gameloop());
           });
 
           // TODO Test that the timer is delayed appropriately
           // describe('when gravity is enabled', () => {
           //   beforeEach(() => {
-          //     jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+          //     jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
           //   });
 
           //   test('delays the gravity effect for 3 gameloop calls', () => {
@@ -804,7 +804,7 @@ describe("Tetris", () => {
           // });
 
           test('throws GAMELOOP event', () => {
-            expectEventThrown('GAMELOOP', () => tetris.gameloop());
+            expectEventThrown('GAMELOOP', () => blocky.gameloop());
           });
         });
 
@@ -815,33 +815,33 @@ describe("Tetris", () => {
 
           describe('when gravity is enabled', () => {
             beforeEach(() => {
-              jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+              jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
             });
 
             describe('when the gravity effect is delayed', () => {
               beforeEach(() => {
                 // TODO Find a better way to test this.
-                tetris['ticksUntilNextGravity'] = 2;
+                blocky['ticksUntilNextGravity'] = 2;
               });
 
               test('decrements the gravity effect delay by one gameloop', () => {
-                tetris.gameloop();
-                expect(tetris['ticksUntilNextGravity']).toBe(1);
+                blocky.gameloop();
+                expect(blocky['ticksUntilNextGravity']).toBe(1);
               });
 
               describe('when the gravity effect delay decreases 0', () => {
                 beforeEach(() => {
-                  tetris['ticksUntilNextGravity'] = 1;
+                  blocky['ticksUntilNextGravity'] = 1;
                 });
 
                 test('updates the gravity timer delay', () => {
-                  expectMethodCalled('updateGravityTimerDelayMs', () => tetris.gameloop());
+                  expectMethodCalled('updateGravityTimerDelayMs', () => blocky.gameloop());
                 });
               });
 
               describe('when the gravity effect delay is still > 0', () => {
                 test('does not update the gravity timer delay', () => {
-                  expectMethodNotCalled('updateGravityTimerDelayMs', () => tetris.gameloop());
+                  expectMethodNotCalled('updateGravityTimerDelayMs', () => blocky.gameloop());
                 });
               });
             });
@@ -849,28 +849,28 @@ describe("Tetris", () => {
             describe('when the gravity effect is not under delay', () => {
               beforeEach(() => {
                 // TODO Find a better way to test this.
-                tetris['ticksUntilNextGravity'] = 0;
+                blocky['ticksUntilNextGravity'] = 0;
               });
 
               test('shifts the piece DOWN', () => {
-                jest.spyOn(tetris, 'shiftPiece');
-                tetris.gameloop();
-                expect(tetris.shiftPiece).toHaveBeenCalledWith(Move.DOWN);
+                jest.spyOn(blocky, 'shiftPiece');
+                blocky.gameloop();
+                expect(blocky.shiftPiece).toHaveBeenCalledWith(Move.DOWN);
               });
             });
           });
 
           describe('when gravity is disabled', () => {
             beforeEach(() => {
-              jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(false);
+              jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(false);
             });
 
             test('does not shift the piece', () => {
-              expectMethodNotCalled('shiftPiece', () => tetris.gameloop());
+              expectMethodNotCalled('shiftPiece', () => blocky.gameloop());
             });
 
             test('does not update the gravity timer delay', () => {
-              expectMethodNotCalled('updateGravityTimerDelayMs', () => tetris.gameloop());
+              expectMethodNotCalled('updateGravityTimerDelayMs', () => blocky.gameloop());
             });
           });
         });
@@ -885,7 +885,7 @@ describe("Tetris", () => {
       });
 
       test('returns true', () => {
-        expect(tetris.checkGameOver()).toBe(true);
+        expect(blocky.checkGameOver()).toBe(true);
       });
     });
 
@@ -900,9 +900,9 @@ describe("Tetris", () => {
         });
 
         test('calls gameOver and returns true', () => {
-          jest.spyOn(tetris, 'gameOver');
-          const result = tetris.checkGameOver();
-          expect(tetris.gameOver).toHaveBeenCalled();
+          jest.spyOn(blocky, 'gameOver');
+          const result = blocky.checkGameOver();
+          expect(blocky.gameOver).toHaveBeenCalled();
           expect(result).toBe(true);
         });
       });
@@ -913,9 +913,9 @@ describe("Tetris", () => {
         });
 
         test('returns false', () => {
-          jest.spyOn(tetris, 'gameOver');
-          const result = tetris.checkGameOver();
-          expect(tetris.gameOver).not.toHaveBeenCalled();
+          jest.spyOn(blocky, 'gameOver');
+          const result = blocky.checkGameOver();
+          expect(blocky.gameOver).not.toHaveBeenCalled();
           expect(result).toBe(false);
         });
       });
@@ -932,58 +932,58 @@ describe("Tetris", () => {
 
     test('increments state level', () => {
       const levelBefore = state.level;
-      tetris.increaseLevel();
+      blocky.increaseLevel();
       expect(state.level).toBe(levelBefore + 1);
     });
 
     test('adds to the linesUntilNextLevel counter', () => {
       const linesUntilNextLevelBefore = state.linesUntilNextLevel;
-      tetris.increaseLevel();
+      blocky.increaseLevel();
       expect(state.linesUntilNextLevel).toBe(linesUntilNextLevelBefore + linesPerLevel);
     });
 
     test('updates the gravity delay timer', () => {
-      expectMethodCalled('updateGravityTimerDelayMs', () => tetris.increaseLevel());
+      expectMethodCalled('updateGravityTimerDelayMs', () => blocky.increaseLevel());
     });
 
     test('throws the LEVEL_UPDATE event', () => {
-      expectEventThrown('LEVEL_UPDATE', () => tetris.increaseLevel());
+      expectEventThrown('LEVEL_UPDATE', () => blocky.increaseLevel());
     });
   });
 
   describe('reset', () => {
     test('resets the game state', () => {
-      expectStateMethodCalled('reset', () => tetris.reset());
+      expectStateMethodCalled('reset', () => blocky.reset());
     });
 
     test('throws the RESET event', () => {
-      expectEventThrown('RESET', () => tetris.reset());
+      expectEventThrown('RESET', () => blocky.reset());
     });
   });
 
   describe('gameOver', () => {
     test('sets state isGameOver, isPaused, isClearingLines', () => {
-      tetris.gameOver();
+      blocky.gameOver();
       expect(state.isGameOver).toBe(true);
       expect(state.isPaused).toBe(false);
       expect(state.isClearingLines).toBe(false);
     });
 
     test('places the piece on the board wherever it currently is', () => {
-      expectStateMethodCalled('placePiece', () => tetris.gameOver());
+      expectStateMethodCalled('placePiece', () => blocky.gameOver());
     });
 
     test('throws the GAME_OVER event', () => {
-      expectEventThrown('GAME_OVER', () => tetris.gameOver());
+      expectEventThrown('GAME_OVER', () => blocky.gameOver());
     });
 
     describe('when gravity is enabled', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
       });
 
       test('stops the gravity timer', () => {
-        tetris.gameOver();
+        blocky.gameOver();
         expect(mockTimer.stop).toHaveBeenCalled();
       });
     });
@@ -1002,7 +1002,7 @@ describe("Tetris", () => {
       });
 
       test('returns false', () => {
-        expect(tetris.handleRotation(move)).toBe(false);
+        expect(blocky.handleRotation(move)).toBe(false);
       });
     });
 
@@ -1012,7 +1012,7 @@ describe("Tetris", () => {
       });
 
       test('returns false', () => {
-        expect(tetris.handleRotation(move)).toBe(false);
+        expect(blocky.handleRotation(move)).toBe(false);
       });
     });
 
@@ -1022,7 +1022,7 @@ describe("Tetris", () => {
       });
 
       test('returns false', () => {
-        expect(tetris.handleRotation(move)).toBe(false);
+        expect(blocky.handleRotation(move)).toBe(false);
       });
     });
 
@@ -1035,21 +1035,21 @@ describe("Tetris", () => {
 
       describe('when the rotation is valid', () => {
         beforeEach(() => {
-          jest.spyOn(tetris, 'rotate').mockReturnValue(true);
+          jest.spyOn(blocky, 'rotate').mockReturnValue(true);
         });
 
         test('returns true', () => {
-          expect(tetris.handleRotation(move)).toBe(true);
+          expect(blocky.handleRotation(move)).toBe(true);
         });
       });
 
       describe('when the rotation is invalid', () => {
         beforeEach(() => {
-          jest.spyOn(tetris, 'rotate').mockReturnValue(false);
+          jest.spyOn(blocky, 'rotate').mockReturnValue(false);
         });
 
         test('returns false', () => {
-          expect(tetris.handleRotation(move)).toBe(false);
+          expect(blocky.handleRotation(move)).toBe(false);
         });
       });
     });
@@ -1066,20 +1066,20 @@ describe("Tetris", () => {
 
     describe('when the shift is valid', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'shiftPiece').mockReturnValue(true);
+        jest.spyOn(blocky, 'shiftPiece').mockReturnValue(true);
       });
 
       test('returns true', () => {
-        expect(tetris.shift(rowOffset, colOffset)).toBe(true);
+        expect(blocky.shift(rowOffset, colOffset)).toBe(true);
       });
 
       describe('when the given rowOffset is positive and gravity is enabled', () => {
         beforeEach(() => {
-          jest.spyOn(tetris, 'isGravityEnabled').mockReturnValue(true);
+          jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
         });
 
         test('delays the gravity timer tick', () => {
-          tetris.shift(rowOffset, colOffset);
+          blocky.shift(rowOffset, colOffset);
           expect(mockTimer.delayNextTick).toHaveBeenCalled();
         });
 
@@ -1090,14 +1090,14 @@ describe("Tetris", () => {
         // the amount of timer ticks (gameloop calls) that the gravity effect will be ignored.
         describe('when the gravity effect is delayed', () => {
           beforeEach(() => {
-            tetris['ticksUntilNextGravity'] = 2;
+            blocky['ticksUntilNextGravity'] = 2;
           });
 
           test('clears the effect delay and updates the timer delay', () => {
-            jest.spyOn(tetris, 'updateGravityTimerDelayMs');
-            tetris.shift(rowOffset, colOffset);
-            expect(tetris['ticksUntilNextGravity']).toBe(0);
-            expect(tetris.updateGravityTimerDelayMs).toHaveBeenCalled();
+            jest.spyOn(blocky, 'updateGravityTimerDelayMs');
+            blocky.shift(rowOffset, colOffset);
+            expect(blocky['ticksUntilNextGravity']).toBe(0);
+            expect(blocky.updateGravityTimerDelayMs).toHaveBeenCalled();
           });
         });
       });
@@ -1105,11 +1105,11 @@ describe("Tetris", () => {
 
     describe('when the shift is not valid', () => {
       beforeEach(() => {
-        jest.spyOn(tetris, 'shiftPiece').mockReturnValue(false);
+        jest.spyOn(blocky, 'shiftPiece').mockReturnValue(false);
       });
 
       test('returns false', () => {
-        expect(tetris.shift(rowOffset, colOffset)).toBe(false);
+        expect(blocky.shift(rowOffset, colOffset)).toBe(false);
       });
     });
   });
@@ -1127,15 +1127,15 @@ describe("Tetris", () => {
 
     describe('when the eventBus has not yet been initialized', () => {
       beforeEach(() => {
-        tetris['eventBus'] = null;
+        blocky['eventBus'] = null;
       });
 
       describe('registerEvent', () => {
         test('initializes eventBus and registers the event with it', () => {
           jest.spyOn(EventBus.prototype, 'registerEventListener');
-          tetris.registerEventListener(eventName, listener);
+          blocky.registerEventListener(eventName, listener);
 
-          const eventBus = tetris['eventBus'];
+          const eventBus = blocky['eventBus'];
           if (!eventBus) {
             fail('eventBus was not initialized as expected');
           } else {
@@ -1147,27 +1147,27 @@ describe("Tetris", () => {
 
       describe('unregisterEventListener', () => {
         test('returns false', () => {
-          expect(tetris.unregisterEventListener(eventName, listener)).toBe(false);
+          expect(blocky.unregisterEventListener(eventName, listener)).toBe(false);
         });
       });
 
       describe('unregisterAllEventListeners', () => {
         test('returns false', () => {
-          expect(tetris.unregisterAllEventListeners(eventName)).toBe(false);
+          expect(blocky.unregisterAllEventListeners(eventName)).toBe(false);
         });
       });
 
       describe('throwEvent', () => {
         test('does nothing; does not call throwEvent on eventBus', () => {
           jest.spyOn(EventBus.prototype, 'throwEvent');
-          tetris.throwEvent(event);
+          blocky.throwEvent(event);
           expect(EventBus.prototype.throwEvent).not.toHaveBeenCalled();
         });
       });
 
       describe('hasListeners', () => {
         test('returns false', () => {
-          expect(tetris.hasListeners(eventName)).toBe(false);
+          expect(blocky.hasListeners(eventName)).toBe(false);
         });
       });
     });
@@ -1177,14 +1177,14 @@ describe("Tetris", () => {
 
       beforeEach(() => {
         eventBus = new EventBus();
-        tetris['eventBus'] = eventBus;
+        blocky['eventBus'] = eventBus;
       });
 
       describe('registerEventListener', () => {
         test('defers to the eventBus registerEventListener', () => {
           const result = true;
           jest.spyOn(eventBus, 'registerEventListener').mockReturnValue(result);
-          expect(tetris.registerEventListener(eventName, listener)).toBe(result);
+          expect(blocky.registerEventListener(eventName, listener)).toBe(result);
           expect(eventBus.registerEventListener).toHaveBeenCalledWith(eventName, listener);
         });
       });
@@ -1193,7 +1193,7 @@ describe("Tetris", () => {
         test('defers to the eventBus unregisterEventListener', () => {
           const result = true;
           jest.spyOn(eventBus, 'unregisterEventListener').mockReturnValue(result);
-          expect(tetris.unregisterEventListener(eventName, listener)).toBe(result);
+          expect(blocky.unregisterEventListener(eventName, listener)).toBe(result);
           expect(eventBus.unregisterEventListener).toHaveBeenCalledWith(eventName, listener);
         });
       });
@@ -1202,7 +1202,7 @@ describe("Tetris", () => {
         test('defers to the eventBus unregisterAllEventListeners', () => {
           const result = true;
           jest.spyOn(eventBus, 'unregisterAllEventListeners').mockReturnValue(result);
-          expect(tetris.unregisterAllEventListeners(eventName)).toBe(result);
+          expect(blocky.unregisterAllEventListeners(eventName)).toBe(result);
           expect(eventBus.unregisterAllEventListeners).toHaveBeenCalledWith(eventName);
         });
       });
@@ -1210,7 +1210,7 @@ describe("Tetris", () => {
       describe('throwEvent', () => {
         test('defers to the eventBus throwEvent', () => {
           jest.spyOn(eventBus, 'throwEvent');
-          tetris.throwEvent(event);
+          blocky.throwEvent(event);
           expect(eventBus.throwEvent).toHaveBeenCalledWith(event);
         });
       });
@@ -1219,7 +1219,7 @@ describe("Tetris", () => {
         test('defers to the eventBus hasListeners', () => {
           const result = true;
           jest.spyOn(eventBus, 'hasListeners').mockReturnValue(result);
-          expect(tetris.hasListeners(eventName)).toBe(result);
+          expect(blocky.hasListeners(eventName)).toBe(result);
           expect(eventBus.hasListeners).toHaveBeenCalledWith(eventName);
         });
       });
@@ -1228,11 +1228,11 @@ describe("Tetris", () => {
 
   describe('nextPiece', () => {
     test('resets the piece on the state', () => {
-      expectStateMethodCalled('resetPiece', () => tetris.nextPiece());
+      expectStateMethodCalled('resetPiece', () => blocky.nextPiece());
     });
 
     test('throws the PIECE_CREATE event', () => {
-      expectEventThrown('PIECE_CREATE', () => tetris.nextPiece());
+      expectEventThrown('PIECE_CREATE', () => blocky.nextPiece());
     });
   });
 });

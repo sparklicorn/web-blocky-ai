@@ -2,7 +2,7 @@ import Coord from '../structs/Coord';
 import Move from '../structs/Move';
 import Position from '../structs/Position';
 import { Shape } from './Shape';
-import TetrisState from './TetrisState';
+import BlockyState from './BlockyState';
 import ZMod from '../util/ZMod';
 
 export default class Piece {
@@ -125,7 +125,7 @@ export default class Piece {
    * @param state The state to check for intersections.
    * @return Whether or not the piece intersects with any blocks on the given state.
    */
-  intersects(state: TetrisState): boolean {
+  intersects(state: BlockyState): boolean {
     return this._blockCoords.some(coord => !state.isCellEmpty(coord));
   }
 

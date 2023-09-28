@@ -6,7 +6,7 @@ import { SHAPES, Shape } from './Shape';
 import ShapeQueue from './ShapeQueue';
 import { bounded, validatePositiveInteger } from '../util/Util';
 
-export default class TetrisState {
+export default class BlockyState {
 	// TODO experiment with different values
 	static readonly MIN_ROWS = 5;
 	static readonly MIN_COLS = 5;
@@ -17,8 +17,8 @@ export default class TetrisState {
 	static readonly DEFAULT_NUM_COLS = 10;
   static readonly DEFAULT_LINES_PER_LEVEL = 10;
 
-	static readonly DEFAULT_ENTRY_COLUMN = TetrisState.calcEntryColumn(TetrisState.DEFAULT_NUM_COLS);
-  static readonly DEFAULT_ENTRY_COORD = new Coord(1, TetrisState.DEFAULT_ENTRY_COLUMN);
+	static readonly DEFAULT_ENTRY_COLUMN = BlockyState.calcEntryColumn(BlockyState.DEFAULT_NUM_COLS);
+  static readonly DEFAULT_ENTRY_COORD = new Coord(1, BlockyState.DEFAULT_ENTRY_COLUMN);
 
   // TODO default points per line cleared
 
@@ -30,8 +30,8 @@ export default class TetrisState {
 	 */
 	static calcEntryColumn(cols : number) {
 		const _cols = bounded(
-			TetrisState.MIN_COLS,
-			TetrisState.MAX_COLS,
+			BlockyState.MIN_COLS,
+			BlockyState.MAX_COLS,
 			validatePositiveInteger(cols, 'cols')
 		);
 
@@ -39,10 +39,10 @@ export default class TetrisState {
 	}
 
 	/**
-	 * Creates a new TetrisState with the same values as the given TetrisState.
+	 * Creates a new BlockyState with the same values as the given BlockyState.
 	 */
-	static copy(other: TetrisState): TetrisState {
-    const copy = new TetrisState(
+	static copy(other: BlockyState): BlockyState {
+    const copy = new BlockyState(
       other.rows,
       other.cols,
       other.entryCoord,
@@ -66,11 +66,11 @@ export default class TetrisState {
     return copy;
 	}
 
-  readonly rows: number = TetrisState.DEFAULT_NUM_ROWS;
-  readonly cols: number = TetrisState.DEFAULT_NUM_COLS;
-  readonly entryCoord: Coord = new Coord(1, TetrisState.calcEntryColumn(this.cols));
+  readonly rows: number = BlockyState.DEFAULT_NUM_ROWS;
+  readonly cols: number = BlockyState.DEFAULT_NUM_COLS;
+  readonly entryCoord: Coord = new Coord(1, BlockyState.calcEntryColumn(this.cols));
 
-	protected readonly _linesPerLevel: number | ((level: number) => number) = TetrisState.DEFAULT_LINES_PER_LEVEL;
+	protected readonly _linesPerLevel: number | ((level: number) => number) = BlockyState.DEFAULT_LINES_PER_LEVEL;
 
   protected _board: number[] = [];
   protected _isGameOver: boolean = false;
@@ -93,23 +93,23 @@ export default class TetrisState {
   // TODO create function to calculate points per line cleared based property
 
 	/**
-	 * Creates a new TetrisState with the given number of rows and columns.
+	 * Creates a new BlockyState with the given number of rows and columns.
 	 */
 	constructor(
-    rows: number = TetrisState.DEFAULT_NUM_ROWS,
-    cols: number = TetrisState.DEFAULT_NUM_COLS,
-    entryCoord: Coord = new Coord(1, TetrisState.calcEntryColumn(cols)),
-    linesPerLevel: number | ((level: number) => number) = TetrisState.DEFAULT_LINES_PER_LEVEL
+    rows: number = BlockyState.DEFAULT_NUM_ROWS,
+    cols: number = BlockyState.DEFAULT_NUM_COLS,
+    entryCoord: Coord = new Coord(1, BlockyState.calcEntryColumn(cols)),
+    linesPerLevel: number | ((level: number) => number) = BlockyState.DEFAULT_LINES_PER_LEVEL
   ) {
 		this.rows = validatePositiveInteger(rows, 'rows');
 		this.cols = validatePositiveInteger(cols, 'cols');
 
-		if (this.rows < TetrisState.MIN_ROWS || this.rows > TetrisState.MAX_ROWS) {
-			throw new Error(`rows must be between ${TetrisState.MIN_ROWS} and ${TetrisState.MAX_ROWS}`);
+		if (this.rows < BlockyState.MIN_ROWS || this.rows > BlockyState.MAX_ROWS) {
+			throw new Error(`rows must be between ${BlockyState.MIN_ROWS} and ${BlockyState.MAX_ROWS}`);
 		}
 
-		if (this.cols < TetrisState.MIN_COLS || this.cols > TetrisState.MAX_COLS) {
-			throw new Error(`cols must be between ${TetrisState.MIN_COLS} and ${TetrisState.MAX_COLS}`);
+		if (this.cols < BlockyState.MIN_COLS || this.cols > BlockyState.MAX_COLS) {
+			throw new Error(`cols must be between ${BlockyState.MIN_COLS} and ${BlockyState.MAX_COLS}`);
 		}
 
 		this.entryCoord = entryCoord;

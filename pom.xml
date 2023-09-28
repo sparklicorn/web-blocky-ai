@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/583c3e17-a00a-4da3-a950-a23b05bd2941 -->
     <groupId>com.example.application</groupId>
-    <artifactId>web-tetris-ai</artifactId>
-    <name>web-tetris-ai</name>
+    <artifactId>web-blocky-ai</artifactId>
+    <name>web-blocky-ai</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 

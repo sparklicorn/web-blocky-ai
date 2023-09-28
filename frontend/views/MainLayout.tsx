@@ -6,7 +6,7 @@ import { AppLayout } from '@hilla/react-components/AppLayout';
 // import { MenuProps, routes, useViewMatches, ViewRouteObject } from 'Frontend/routes';
 // import { Suspense } from 'react';
 // import { NavLink, Outlet } from 'react-router-dom';
-import TetrisAiView from './tetris-ai/TetrisAiView';
+import BlockyAiView from './blocky-ai/BlockyAiView';
 // import css from './MainLayout.module.css';
 
 // type MenuRoute = ViewRouteObject &
@@ -68,7 +68,7 @@ export default function MenuOnLeftLayout() {
         {/* <Outlet />
       </Suspense> */}
 
-      <TetrisAiView />
+      <BlockyAiView />
     </AppLayout>
   );
 }

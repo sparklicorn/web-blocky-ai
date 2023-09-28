@@ -12,8 +12,8 @@ services:
     volumes:
       - my-db:/var/lib/mysql
 
-  springboot-web-tetris:
-    container_name: springboot-web-tetris
+  springboot-web-blocky:
+    container_name: springboot-web-blocky
     depends_on:
       - mysqldb
     build: .

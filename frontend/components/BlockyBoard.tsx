@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import Tetris from '../tetris/Tetris';
+import Blocky from '../blocky/Blocky';
 import { EventListener } from '../event/Event';
-import TetrisEvent from '../tetris/TetrisEvent';
+import BlockyEvent from '../blocky/BlockyEvent';
 import Coord from '../structs/Coord';
-import TetrisState from '../tetris/TetrisState';
-import ITetrisGame from '../tetris/ITetrisGame';
+import BlockyState from '../blocky/BlockyState';
+import IBlockyGame from '../blocky/IBlockyGame';
 import { bounded } from '../util/Util';
 
 import { HorizontalLayout } from '@hilla/react-components/HorizontalLayout';
@@ -15,7 +15,7 @@ import '@vaadin/icons';
 
 const bgColor = '#000';
 
-export default function TetrisBoard() {
+export default function BlockyBoard() {
   const [dimensions, setDimensions] = useState(defaultDimensions);
   const boardCanvasRef = useRef<HTMLCanvasElement>(null);
   const nextPieceCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,8 +23,8 @@ export default function TetrisBoard() {
   const levelRef = useRef<HTMLDivElement>(null);
 
   let board : number[] = Array(dimensions.rows * dimensions.columns).fill(0);
-  const state: TetrisState = new TetrisState();
-  const game: ITetrisGame = new Tetris(state);
+  const state: BlockyState = new BlockyState();
+  const game: IBlockyGame = new Blocky(state);
 
   const width = () => dimensions.columns * dimensions.blockSize;
   const height = () => dimensions.rows * dimensions.blockSize;
@@ -330,17 +330,17 @@ export default function TetrisBoard() {
     scoreRef.current!.innerText = `Score\n${state.score}`;
   };
 
-  const onEvent = ((event: TetrisEvent): void => {
+  const onEvent = ((event: BlockyEvent): void => {
     console.log(`Event: ${event.name}`);
 
-    if (event.name === TetrisEvent.GAME_OVER.name) {
+    if (event.name === BlockyEvent.GAME_OVER.name) {
       console.log(JSON.stringify(event.data.state));
     }
 
     if (
-      event.name === TetrisEvent.LEVEL_UPDATE.name ||
-      event.name === TetrisEvent.SCORE_UPDATE.name ||
-      event.name === TetrisEvent.START.name
+      event.name === BlockyEvent.LEVEL_UPDATE.name ||
+      event.name === BlockyEvent.SCORE_UPDATE.name ||
+      event.name === BlockyEvent.START.name
     ) {
       updateLevelLabel();
       updateScoreLabel();
@@ -351,7 +351,7 @@ export default function TetrisBoard() {
     renderNextPiece();
 	}) as EventListener;
 
-  TetrisEvent.ALL.forEach((eventName) => game.registerEventListener(eventName, onEvent));
+  BlockyEvent.ALL.forEach((eventName) => game.registerEventListener(eventName, onEvent));
 
   const labelStyle = {
     font: '16px Roboto Mono',

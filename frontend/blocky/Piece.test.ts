@@ -3,7 +3,7 @@ import Move from "../structs/Move";
 import Piece from "./Piece";
 import Position from "../structs/Position";
 import { Shape } from "./Shape";
-import TetrisState from "./TetrisState";
+import BlockyState from "./BlockyState";
 import ZMod from "../util/ZMod";
 
 describe('Piece', () => {
@@ -138,10 +138,10 @@ describe('Piece', () => {
   });
 
   describe('intersects', () => {
-    let state: TetrisState;
+    let state: BlockyState;
 
     beforeEach(() => {
-      state = new TetrisState();
+      state = new BlockyState();
     });
 
     describe('when the piece does not overlap with any blocks', () => {

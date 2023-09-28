@@ -2,13 +2,13 @@ import Coord from "../structs/Coord";
 import Move from "../structs/Move";
 import Position from "../structs/Position";
 import { Shape } from "./Shape";
-import TetrisState from "./TetrisState";
+import BlockyState from "./BlockyState";
 
-describe('TetrisState', () => {
-  let state: TetrisState;
+describe('BlockyState', () => {
+  let state: BlockyState;
 
   beforeEach(() => {
-    state = new TetrisState();
+    state = new BlockyState();
   });
 
   describe('static', () => {
@@ -18,7 +18,7 @@ describe('TetrisState', () => {
           const badColses = [-10, -1, 0, 1.5, 5.5, 10.1];
 
           badColses.forEach((cols) => {
-            expect(() => TetrisState.calcEntryColumn(cols)).toThrow();
+            expect(() => BlockyState.calcEntryColumn(cols)).toThrow();
           });
         });
       });
@@ -33,7 +33,7 @@ describe('TetrisState', () => {
           ];
 
           colses.forEach((cols) => {
-            expect(TetrisState.calcEntryColumn(cols.cols)).toEqual(cols.expectedEntry);
+            expect(BlockyState.calcEntryColumn(cols.cols)).toEqual(cols.expectedEntry);
           });
         });
       });
@@ -49,7 +49,7 @@ describe('TetrisState', () => {
           ];
 
           colses.forEach((cols) => {
-            expect(TetrisState.calcEntryColumn(cols.cols)).toEqual(cols.expectedEntry);
+            expect(BlockyState.calcEntryColumn(cols.cols)).toEqual(cols.expectedEntry);
           });
         });
       });
@@ -62,7 +62,7 @@ describe('TetrisState', () => {
         const badRowses = [-10, -1, 0, 1.5, 5.5, 10.1];
 
         badRowses.forEach((rows) => {
-          expect(() => new TetrisState(rows, 10)).toThrow();
+          expect(() => new BlockyState(rows, 10)).toThrow();
         });
       });
     });
@@ -72,7 +72,7 @@ describe('TetrisState', () => {
         const badColses = [-10, -1, 0, 1.5, 5.5, 10.1];
 
         badColses.forEach((cols) => {
-          expect(() => new TetrisState(10, cols)).toThrow();
+          expect(() => new BlockyState(10, cols)).toThrow();
         });
       });
     });
@@ -81,7 +81,7 @@ describe('TetrisState', () => {
       test('creates a state with the given number of rows and columns', () => {
         const rows = 10;
         const cols = 20;
-        const state = new TetrisState(rows, cols);
+        const state = new BlockyState(rows, cols);
 
         expect(state.rows).toEqual(rows);
         expect(state.cols).toEqual(cols);
@@ -92,7 +92,7 @@ describe('TetrisState', () => {
   describe('linesPerLevel', () => {
     describe('when linesPerLevel is a number', () => {
       test('returns the number', () => {
-        expect(state.linesPerLevel()).toEqual(TetrisState.DEFAULT_LINES_PER_LEVEL);
+        expect(state.linesPerLevel()).toEqual(BlockyState.DEFAULT_LINES_PER_LEVEL);
       });
     });
 
@@ -100,7 +100,7 @@ describe('TetrisState', () => {
       test('returns the result of the function', () => {
         const expectedVal = 42;
         const linesPerLevel = jest.fn(() => expectedVal);
-        const state = new TetrisState(10, 20, TetrisState.DEFAULT_ENTRY_COORD, linesPerLevel);
+        const state = new BlockyState(10, 20, BlockyState.DEFAULT_ENTRY_COORD, linesPerLevel);
 
         expect(state.linesPerLevel()).toEqual(expectedVal);
       });
@@ -480,7 +480,7 @@ describe('TetrisState', () => {
     });
 
     test('copies the row', () => {
-      state = new TetrisState(5, 5);
+      state = new BlockyState(5, 5);
       [
         0,0,0,0,0,
         1,1,1,1,1,
@@ -521,7 +521,7 @@ describe('TetrisState', () => {
     });
 
     test('clears the given row', () => {
-      state = new TetrisState(5, 5);
+      state = new BlockyState(5, 5);
 
       [
         0,0,0,0,0,
@@ -572,7 +572,7 @@ describe('TetrisState', () => {
     });
 
     test('returns false', () => {
-      state = new TetrisState(5, 5);
+      state = new BlockyState(5, 5);
       [
         0,0,0,0,0,
         1,1,1,1,1,

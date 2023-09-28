@@ -2,32 +2,32 @@ import Coord from '../structs/Coord';
 import { Event, EventListener } from '../event/Event';
 import EventBus from '../event/EventBus';
 import Move from '../structs/Move';
-import TetrisEvent from './TetrisEvent';
-import TetrisState from './TetrisState';
+import BlockyEvent from './BlockyEvent';
+import BlockyState from './BlockyState';
 import Timer from '../util/Timer';
 import { bounded } from '../util/Util';
-import ITetrisGame from './ITetrisGame';
+import IBlockyGame from './IBlockyGame';
 import IEventBussy from '../event/IEventBussy';
 
-export default class Tetris implements ITetrisGame, IEventBussy {
+export default class Blocky implements IBlockyGame, IEventBussy {
   static readonly PIECE_PLACED_DELAY_MS = 250;
   static readonly POINTS_BY_LINES_CLEARED = [0, 40, 100, 300, 1200];
 
-  protected _state: TetrisState;
+  protected _state: BlockyState;
   protected eventBus: EventBus | null = null;
 	protected usingGravity: boolean = true;
   protected gravityTimer: Timer;
   protected numTimerPushbacks: number = 0;
   protected ticksUntilNextGravity: number = 0;
 
-  constructor(state: TetrisState = new TetrisState()) {
+  constructor(state: BlockyState = new BlockyState()) {
     this._state = state;
     this.gravityTimer = new Timer(this.gameloop.bind(this));
   }
 
 	newGame(): void {
 		this.reset();
-		this.throwEvent(TetrisEvent.NEW_GAME(this));
+		this.throwEvent(BlockyEvent.NEW_GAME(this));
 	}
 
 	start(level: number = 0, useGravity: boolean = true): void {
@@ -45,7 +45,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			this.updateGravityTimerDelayMs();
 		}
 
-		this.throwEvent(TetrisEvent.START(this));
+		this.throwEvent(BlockyEvent.START(this));
 	}
 
 	stop(): void {
@@ -58,7 +58,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			this.gravityTimer.stop();
 		}
 
-		this.throwEvent(TetrisEvent.STOP(this));
+		this.throwEvent(BlockyEvent.STOP(this));
 	}
 
 	pause(): void {
@@ -72,7 +72,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			this.gravityTimer.stop();
 		}
 
-		this.throwEvent(TetrisEvent.PAUSE());
+		this.throwEvent(BlockyEvent.PAUSE());
 	}
 
 	resume(): void {
@@ -81,7 +81,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			if (this.isGravityEnabled()) {
 				this.gravityTimer.start(this.gravityDelayMsForLevel());
 			}
-			this.throwEvent(TetrisEvent.RESUME());
+			this.throwEvent(BlockyEvent.RESUME());
 		}
 	}
 
@@ -105,8 +105,8 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		return this.handleRotation(Move.COUNTERCLOCKWISE);
 	}
 
-	getState(): TetrisState {
-		return TetrisState.copy(this._state);
+	getState(): BlockyState {
+		return BlockyState.copy(this._state);
 	}
 
 	/**
@@ -127,7 +127,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			this.plotPiece();
 
 			if (this.isGravityEnabled()) {
-				this.gravityTimer.delay = Tetris.PIECE_PLACED_DELAY_MS;
+				this.gravityTimer.delay = Blocky.PIECE_PLACED_DELAY_MS;
 				this.ticksUntilNextGravity = 2;
 			}
 		} else if (!this._state.piece.isActive) {	// The loop after piece kerplunks
@@ -147,7 +147,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			if (this.isGravityEnabled()) {
 				if (this.ticksUntilNextGravity == 0) {
 					this.shiftPiece(Move.DOWN);
-					// this.throwEvent(TetrisEvent.PIECE_SHIFT(this));
+					// this.throwEvent(BlockyEvent.PIECE_SHIFT(this));
 				} else {
 					this.ticksUntilNextGravity = Math.max(0, this.ticksUntilNextGravity - 1);
 					if (this.ticksUntilNextGravity == 0) {
@@ -157,7 +157,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			}
 		}
 
-		this.throwEvent(TetrisEvent.GAMELOOP(this));
+		this.throwEvent(BlockyEvent.GAMELOOP(this));
 	}
 
   /**
@@ -167,7 +167,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	 * @return Points to reward.
 	 */
 	calcPointsForClearing(lines: number): number {
-		return Tetris.POINTS_BY_LINES_CLEARED[lines] * (this._state.level + 1);
+		return Blocky.POINTS_BY_LINES_CLEARED[lines] * (this._state.level + 1);
 	}
 
   /**
@@ -187,7 +187,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		}
 
 		this._state.piece.move(_move);
-		this.throwEvent(TetrisEvent.PIECE_ROTATE(this));
+		this.throwEvent(BlockyEvent.PIECE_ROTATE(this));
 
 		return true;
 	}
@@ -201,7 +201,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	shiftPiece(move: Move): boolean {
 		if (this._state.canPieceMove(move)) {
 			this._state.piece.move(move);
-			this.throwEvent(TetrisEvent.PIECE_SHIFT(this));
+			this.throwEvent(BlockyEvent.PIECE_SHIFT(this));
 			return true;
 		}
 
@@ -213,10 +213,10 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	 */
 	plotPiece(): void {
 		this._state.placePiece();
-		this.throwEvent(TetrisEvent.PIECE_PLACED(this).add({
+		this.throwEvent(BlockyEvent.PIECE_PLACED(this).add({
       _numPiecesDropped: this._state.numPiecesDropped
     }));
-		this.throwEvent(TetrisEvent.BLOCKS(this));
+		this.throwEvent(BlockyEvent.BLOCKS(this));
 	}
 
 	/**
@@ -271,7 +271,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		if (this.isGravityEnabled()) {
 			this.usingGravity = false;
 			this.gravityTimer.stop();
-			this.throwEvent(TetrisEvent.GRAVITY_DISABLED());
+			this.throwEvent(BlockyEvent.GRAVITY_DISABLED());
 		}
 	}
 
@@ -282,7 +282,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		if (!this.isGravityEnabled()) {
 			this.usingGravity = true;
       // this.gravityTimer.enable();
-      this.throwEvent(TetrisEvent.GRAVITY_ENABLED());
+      this.throwEvent(BlockyEvent.GRAVITY_ENABLED());
 		}
 
     if (this._state.hasStarted && !this._state.isGameOver && !this._state.isPaused) {
@@ -322,9 +322,9 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			this._state.linesUntilNextLevel -= lines.length;
 			this._state.isClearingLines = true;
 
-			this.throwEvent(TetrisEvent.LINE_CLEAR(this, lines));
-			this.throwEvent(TetrisEvent.SCORE_UPDATE(this));
-			this.throwEvent(TetrisEvent.BLOCKS(this));
+			this.throwEvent(BlockyEvent.LINE_CLEAR(this, lines));
+			this.throwEvent(BlockyEvent.SCORE_UPDATE(this));
+			this.throwEvent(BlockyEvent.BLOCKS(this));
 		}
 
 		return lines.length > 0;
@@ -356,7 +356,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 		this._state.level++;
 		this._state.linesUntilNextLevel += this._state.linesPerLevel();
 		this.updateGravityTimerDelayMs();
-		this.throwEvent(TetrisEvent.LEVEL_UPDATE(this));
+		this.throwEvent(BlockyEvent.LEVEL_UPDATE(this));
 	}
 
 	/**
@@ -365,7 +365,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	reset(): void {
 		this._state.reset();
 		this.numTimerPushbacks = 0;
-		this.throwEvent(TetrisEvent.RESET(this));
+		this.throwEvent(BlockyEvent.RESET(this));
 	}
 
 	/**
@@ -383,7 +383,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 			this.gravityTimer.stop();
 		}
 
-		this.throwEvent(TetrisEvent.GAME_OVER(this));
+		this.throwEvent(BlockyEvent.GAME_OVER(this));
 	}
 
 	/**
@@ -412,7 +412,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 				this.numTimerPushbacks++;
 			}
 
-			// this.throwEvent(TetrisEvent.PIECE_ROTATE(this));
+			// this.throwEvent(BlockyEvent.PIECE_ROTATE(this));
 			return true;
 		}
 
@@ -436,7 +436,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 				this.gravityTimer.delayNextTick();
 			}
 
-			// this.throwEvent(TetrisEvent.PIECE_SHIFT(this));
+			// this.throwEvent(BlockyEvent.PIECE_SHIFT(this));
 			return true;
 		}
 
@@ -497,7 +497,7 @@ export default class Tetris implements ITetrisGame, IEventBussy {
 	 */
 	nextPiece(): void {
 		this._state.resetPiece();
-		this.throwEvent(TetrisEvent.PIECE_CREATE(this).add({
+		this.throwEvent(BlockyEvent.PIECE_CREATE(this).add({
       _nextShapes: this._state.nextShapes
     }));
 	}

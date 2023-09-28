@@ -1,23 +1,23 @@
-import Tetris from "./Tetris";
-import TetrisEvent from "./TetrisEvent";
-import TetrisState from "./TetrisState";
+import Blocky from "./Blocky";
+import BlockyEvent from "./BlockyEvent";
+import BlockyState from "./BlockyState";
 
-describe('TetrisEvent', () => {
-  let event: TetrisEvent;
+describe('BlockyEvent', () => {
+  let event: BlockyEvent;
 
   beforeEach(() => {
-    event = new TetrisEvent('TEST');
+    event = new BlockyEvent('TEST');
   });
 
   describe('constructor', () => {
     test('creates an event with the given name and no extra data', () => {
-      const event = new TetrisEvent('TEST');
+      const event = new BlockyEvent('TEST');
       expect(event.name).toBe('TEST');
       expect(event.data).toEqual({});
     });
 
     test('creates an event with the given name and data', () => {
-      const event = new TetrisEvent('TEST', { a: 1, b: 2 });
+      const event = new BlockyEvent('TEST', { a: 1, b: 2 });
       expect(event.name).toBe('TEST');
       expect(event.data).toEqual({ a: 1, b: 2 });
     });
@@ -43,33 +43,33 @@ describe('TetrisEvent', () => {
 
   describe('withState', () => {
     test('adds the given game state to the event', () => {
-      const tetris = new Tetris();
-      const state = new TetrisState();
-      jest.spyOn(tetris, 'getState').mockReturnValue(state);
+      const blocky = new Blocky();
+      const state = new BlockyState();
+      jest.spyOn(blocky, 'getState').mockReturnValue(state);
 
-      event.withState(tetris);
+      event.withState(blocky);
       expect(event.data).toEqual({ state });
     });
 
     test('returns itself', () => {
-      expect(event.withState(new Tetris())).toBe(event);
+      expect(event.withState(new Blocky())).toBe(event);
     });
   });
 
   describe('withPieceData', () => {
     test('adds the given piece data to the event', () => {
-      const tetris = new Tetris();
-      const state = new TetrisState();
+      const blocky = new Blocky();
+      const state = new BlockyState();
       const piece = state.piece;
-      jest.spyOn(tetris, 'getState').mockReturnValue(state);
+      jest.spyOn(blocky, 'getState').mockReturnValue(state);
       jest.spyOn(state, 'piece', 'get').mockReturnValue(piece);
 
-      event.withPieceData(tetris);
+      event.withPieceData(blocky);
       expect(event.data).toEqual({ _piece: piece });
     });
 
     test('returns itself', () => {
-      expect(event.withPieceData(new Tetris())).toBe(event);
+      expect(event.withPieceData(new Blocky())).toBe(event);
     });
   });
 });

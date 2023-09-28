@@ -1,10 +1,10 @@
 import IEventRegistrar from "../event/IEventRegistrar";
-import TetrisState from "./TetrisState";
+import BlockyState from "./BlockyState";
 
 /**
- * An interface for interacting with a game of Tetris.
+ * An interface for interacting with a game of Blocky.
  */
-export default interface ITetrisGame extends IEventRegistrar {
+export default interface IBlockyGame extends IEventRegistrar {
   /**
    * Sets up a new unstarted game.
    */
@@ -73,5 +73,5 @@ export default interface ITetrisGame extends IEventRegistrar {
    *
    * @returns The current state of the game.
    */
-  getState(): TetrisState;
+  getState(): BlockyState;
 };
