@@ -6,7 +6,10 @@ import { AppLayout } from '@hilla/react-components/AppLayout';
 // import { MenuProps, routes, useViewMatches, ViewRouteObject } from 'Frontend/routes';
 // import { Suspense } from 'react';
 // import { NavLink, Outlet } from 'react-router-dom';
-import BlockyAiView from './blocky-ai/BlockyAiView';
+// import BlockyAiView from './blocky-ai/BlockyAiView';
+import EngineView from './engine/EngineView';
+import Engine from './engine/Engine';
+import obScene from './engine/MyScene';
 // import css from './MainLayout.module.css';
 
 // type MenuRoute = ViewRouteObject &
@@ -23,6 +26,9 @@ export default function MenuOnLeftLayout() {
   // const menuRoutes = (routes[0]?.children || []).filter(
   //   (route) => route.path && route.handle && route.handle.icon && route.handle.title
   // ) as readonly MenuRoute[];
+
+  const engine = new Engine();
+  engine.addScene('main', obScene);
 
   return (
     <AppLayout className="block h-full m-l" /*primarySection="drawer"*/>
@@ -68,7 +74,9 @@ export default function MenuOnLeftLayout() {
         {/* <Outlet />
       </Suspense> */}
 
-      <BlockyAiView />
+      {/* <BlockyAiView /> */}
+
+      <EngineView engine={engine} />
     </AppLayout>
   );
 }
