@@ -30,9 +30,9 @@ export default class BlockyState {
 	 */
 	static calcEntryColumn(cols : number) {
 		const _cols = bounded(
+			validatePositiveInteger(cols, 'cols'),
 			BlockyState.MIN_COLS,
-			BlockyState.MAX_COLS,
-			validatePositiveInteger(cols, 'cols')
+			BlockyState.MAX_COLS
 		);
 
 		return Math.floor(_cols / 2) - ((_cols % 2 === 0) ? 1 : 0);

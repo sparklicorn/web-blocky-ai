@@ -35,7 +35,7 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 			return;
 		}
 
-    this._state.level = bounded(0, 19, level);
+    this._state.level = bounded(level, 0, 19);
 		this._state.hasStarted = true;
 
 		this.nextPiece();
