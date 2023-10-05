@@ -1,11 +1,16 @@
 /**
  * Returns a random integer between min and max, inclusive.
  *
+ * @param value The value to bind.
  * @param min The minimum value, inclusive.
  * @param max The maximum value, inclusive.
  * @returns A random integer between min and max, inclusive.
  */
-export const bounded = (min: number, max: number, value: number): number => {
+export const bounded = (value: number, min: number, max: number): number => {
+  if (min > max) {
+    throw new Error(`min must be less than or equal to max`);
+  }
+
   return Math.min(Math.max(min, value), max);
 };
 

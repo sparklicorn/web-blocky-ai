@@ -2,16 +2,26 @@ import * as Util from './Util';
 
 describe('Util', () => {
   describe('bounded', () => {
-    test('returns the value if it is within the bounds', () => {
-      expect(Util.bounded(0, 10, 5)).toBe(5);
+    describe('when min > max', () => {
+      test('throws an error', () => {
+        expect(() => Util.bounded(0, 1, 0)).toThrowError();
+      });
     });
 
-    test('returns the min if the value is less than the min', () => {
-      expect(Util.bounded(0, 10, -1)).toBe(0);
-    });
-
-    test('returns the max if the value is greater than the max', () => {
-      expect(Util.bounded(0, 10, 11)).toBe(10);
+    test('returns the bounded value', () => {
+      [
+        { value: 5, min: 0, max: 10, expected: 5 },
+        { value: 0, min: 0, max: 10, expected: 0 },
+        { value: 10, min: 0, max: 10, expected: 10 },
+        { value: -1, min: 0, max: 10, expected: 0 },
+        { value: 11, min: 0, max: 10, expected: 10 },
+        { value: 5, min: -5, max: 5, expected: 5 },
+        { value: -5, min: -5, max: 5, expected: -5 },
+        { value: -6, min: -5, max: 5, expected: -5 },
+        { value: 6, min: -5, max: 5, expected: 5 }
+      ].forEach(({ value, min, max, expected }) => {
+        expect(Util.bounded(value, min, max)).toBe(expected);
+      });
     });
   });
 
