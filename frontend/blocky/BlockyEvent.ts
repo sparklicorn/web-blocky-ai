@@ -8,13 +8,11 @@ import Blocky from './Blocky';
 export default class BlockyEvent extends Event {
   // Events that transmit a copy of the whole game state:
   /** Creates a new BlockyEvent with the given game's state. */
-  static NEW_GAME(blocky: Blocky): BlockyEvent { return new BlockyEvent('NEW_GAME').withState(blocky); }
+  static SETUP(blocky: Blocky): BlockyEvent { return new BlockyEvent('SETUP').withState(blocky); }
   /** Creates a new BlockyEvent with the given game's state. */
   static START(blocky: Blocky): BlockyEvent { return new BlockyEvent('START').withState(blocky); }
   /** Creates a new BlockyEvent with the given game's state. */
   static STOP(blocky: Blocky): BlockyEvent { return new BlockyEvent('STOP').withState(blocky); }
-  /** Creates a new BlockyEvent with the given game's state. */
-  static RESET(blocky: Blocky): BlockyEvent { return new BlockyEvent('RESET').withState(blocky); }
   /** Creates a new BlockyEvent with the given game's state. */
   static GAMELOOP(blocky: Blocky): BlockyEvent { return new BlockyEvent('GAMELOOP').withState(blocky); }
   /** Creates a new BlockyEvent with the given game's state. */
@@ -73,7 +71,7 @@ export default class BlockyEvent extends Event {
 
   /** Contains the names of all BlockyEvents. */
   static readonly ALL: string[] = [
-    'NEW_GAME', 'START', 'STOP', 'RESET', 'GAMELOOP', 'GAME_OVER',
+    'SETUP', 'START', 'STOP', 'GAMELOOP', 'GAME_OVER',
     'PAUSE', 'RESUME', 'GRAVITY_ENABLED', 'GRAVITY_DISABLED',
     'PIECE_CREATE', 'PIECE_SHIFT', 'PIECE_ROTATE', 'PIECE_PLACED',
     'LINE_CLEAR', 'SCORE_UPDATE', 'LEVEL_UPDATE', 'BLOCKS'
@@ -128,7 +126,7 @@ export default class BlockyEvent extends Event {
 
 /** Contains the names of all BlockyEvents. */
 export type BlockyEventName =
-  'NEW_GAME' | 'START' | 'STOP' | 'RESET' | 'GAMELOOP' | 'GAME_OVER' |
+  'SETUP' | 'START' | 'STOP' | 'GAMELOOP' | 'GAME_OVER' |
   'PAUSE' | 'RESUME' | 'GRAVITY_ENABLED' | 'GRAVITY_DISABLED' |
   'PIECE_CREATE' | 'PIECE_SHIFT' | 'PIECE_ROTATE' | 'PIECE_PLACED' |
   'LINE_CLEAR' | 'SCORE_UPDATE' | 'LEVEL_UPDATE' | 'BLOCKS';

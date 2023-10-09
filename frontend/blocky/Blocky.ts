@@ -1,85 +1,105 @@
-import Coord from '../structs/Coord';
 import { Event, EventListener } from '../event/Event';
 import EventBus from '../event/EventBus';
+import IEventBussy from '../event/IEventBussy';
+import Coord from '../structs/Coord';
 import Move from '../structs/Move';
+import Timer from '../util/Timer';
+
 import BlockyEvent from './BlockyEvent';
 import BlockyState from './BlockyState';
-import Timer from '../util/Timer';
-import { bounded } from '../util/Util';
-import IBlockyGame from './IBlockyGame';
-import IEventBussy from '../event/IEventBussy';
+import IBlockyGame, { GameOptions } from './IBlockyGame';
 
 export default class Blocky implements IBlockyGame, IEventBussy {
   static readonly PIECE_PLACED_DELAY_MS = 250;
   static readonly POINTS_BY_LINES_CLEARED = [0, 40, 100, 300, 1200];
 
-  protected _state: BlockyState;
+  protected state: BlockyState;
   protected eventBus: EventBus | null = null;
+
 	protected usingGravity: boolean = true;
-  protected gravityTimer: Timer;
+  protected gravityTimer: Timer | null = null;
   protected numTimerPushbacks: number = 0;
   protected ticksUntilNextGravity: number = 0;
 
   constructor(state: BlockyState = new BlockyState()) {
-    this._state = state;
-    this.gravityTimer = new Timer(this.gameloop.bind(this));
+    this.state = state;
+		this.usingGravity = this.state.options.useGravity;
   }
 
-	newGame(): void {
-		this.reset();
-		this.throwEvent(BlockyEvent.NEW_GAME(this));
+	setup(options?: GameOptions): void {
+		if (this.state.hasStarted) {
+			this.stop();
+		}
+
+		this.state.reset(options);
+		this.usingGravity = this.state.options.useGravity;
+		this.numTimerPushbacks = 0;
+		this.ticksUntilNextGravity = 0;
+
+		if (this.isGravityEnabled()) {
+			this.enableGravity();
+		} else {
+			this.disableGravity();
+		}
+
+		this.throwEvent(BlockyEvent.SETUP(this));
 	}
 
-	start(level: number = 0, useGravity: boolean = true): void {
-		if (this._state.hasStarted) {
+	// TODO set other game options through this (rows, cols, etc.)
+	start(): void {
+		if (this.state.hasStarted) {
 			return;
 		}
 
-    this._state.level = bounded(level, 0, 19);
-		this._state.hasStarted = true;
-
+		this.state.hasStarted = true;
 		this.nextPiece();
 
-		if (useGravity) {
-			this.enableGravity();
+		if (this.usingGravity) {
 			this.updateGravityTimerDelayMs();
+			this.gravityTimer?.start(this.gravityDelayMsForLevel());
 		}
 
 		this.throwEvent(BlockyEvent.START(this));
 	}
 
 	stop(): void {
-		this._state.isPaused = false;
-		this._state.isGameOver = true;
-		this._state.isClearingLines = false;
-		this._state.placePiece();
+		this.state.isPaused = false;
+		this.state.isGameOver = true;
+		this.state.isClearingLines = false;
+		this.state.placePiece();
 
-		if (this.isGravityEnabled()) {
+		if (this.gravityTimer) {
 			this.gravityTimer.stop();
 		}
 
 		this.throwEvent(BlockyEvent.STOP(this));
 	}
 
+	inProgress(): boolean {
+		return this.state.hasStarted && !this.state.isGameOver;
+	}
+
 	pause(): void {
-		if (this._state.isGameOver || this._state.isPaused || !this._state.hasStarted) {
+		if (this.state.isGameOver || this.state.isPaused || !this.state.hasStarted) {
 			return;
 		}
 
-		this._state.isPaused = true;
+		this.state.isPaused = true;
 
 		if (this.isGravityEnabled()) {
-			this.gravityTimer.stop();
+			this.gravityTimer!.stop();
 		}
 
 		this.throwEvent(BlockyEvent.PAUSE());
 	}
 
 	resume(): void {
-		if (this._state.hasStarted && !this._state.isGameOver) {
-			this._state.isPaused = false;
+		if (this.state.hasStarted && !this.state.isGameOver) {
+			this.state.isPaused = false;
 			if (this.isGravityEnabled()) {
-				this.gravityTimer.start(this.gravityDelayMsForLevel());
+				// TODO keep track of how much time was left on the timer
+				// TODO when the game was paused. Resume the timer with that.
+				this.gravityTimer?.start(this.gravityDelayMsForLevel());
 			}
 			this.throwEvent(BlockyEvent.RESUME());
 		}
@@ -91,6 +111,10 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 
 	moveRight(): boolean {
 		return this.shift(0, 1);
+	}
+
+	moveUp(): boolean {
+		return false;
 	}
 
 	moveDown(): boolean {
@@ -106,7 +130,14 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	}
 
 	getState(): BlockyState {
-		return BlockyState.copy(this._state);
+		return BlockyState.copy(this.state);
+	}
+
+	dispose(): void {
+		this.stop();
+		BlockyEvent.ALL.forEach((eventName) => this.unregisterAllEventListeners(eventName));
+		this.gravityTimer = null;
+		this.eventBus = null;
 	}
 
 	/**
@@ -115,26 +146,26 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * Otherwise, this method must be called manually.
 	 */
 	gameloop(): void {
-		if (this._state.isGameOver || this._state.isPaused) {
+		if (this.state.isGameOver || this.state.isPaused) {
 			return;
 		}
 
 		this.numTimerPushbacks = 0;
 
-		if (this._state.piece.isActive && !this._state.canPieceMove(Move.DOWN)) {
+		if (this.state.piece.isActive && !this.state.canPieceMove(Move.DOWN)) {
 			//*kerplunk*
 			//next loop should attempt to clear lines
 			this.plotPiece();
 
 			if (this.isGravityEnabled()) {
-				this.gravityTimer.delay = Blocky.PIECE_PLACED_DELAY_MS;
+				this.gravityTimer!.delay = Blocky.PIECE_PLACED_DELAY_MS;
 				this.ticksUntilNextGravity = 2;
 			}
-		} else if (!this._state.piece.isActive) {	// The loop after piece kerplunks
+		} else if (!this.state.piece.isActive) {	// The loop after piece kerplunks
 			if (this.attemptClearLines()) {
 				this.ticksUntilNextGravity += 2;
 				//check if we need to update level
-				if (this._state.linesUntilNextLevel <= 0) { //level up!!
+				if (this.state.linesUntilNextLevel <= 0) { //level up!!
 					this.increaseLevel();
 				}
 			} else {
@@ -167,7 +198,7 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * @return Points to reward.
 	 */
 	calcPointsForClearing(lines: number): number {
-		return Blocky.POINTS_BY_LINES_CLEARED[lines] * (this._state.level + 1);
+		return Blocky.POINTS_BY_LINES_CLEARED[lines] * (this.state.level + 1);
 	}
 
   /**
@@ -180,13 +211,13 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * @return True if the piece was successfully rotated; otherwise false.
 	 */
 	rotate(move: Move): boolean {
-		const _move = this._state.tryRotation(move);
+		const _move = this.state.tryRotation(move);
 
 		if (_move.equals(Move.STAND)) {
 			return false;
 		}
 
-		this._state.piece.move(_move);
+		this.state.piece.move(_move);
 		this.throwEvent(BlockyEvent.PIECE_ROTATE(this));
 
 		return true;
@@ -199,8 +230,8 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 */
 	//! NOTE: move.rotation is ignored
 	shiftPiece(move: Move): boolean {
-		if (this._state.canPieceMove(move)) {
-			this._state.piece.move(move);
+		if (this.state.canPieceMove(move)) {
+			this.state.piece.move(move);
 			this.throwEvent(BlockyEvent.PIECE_SHIFT(this));
 			return true;
 		}
@@ -212,9 +243,9 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * Plots the piece's block data to the board.
 	 */
 	plotPiece(): void {
-		this._state.placePiece();
+		this.state.placePiece();
 		this.throwEvent(BlockyEvent.PIECE_PLACED(this).add({
-      _numPiecesDropped: this._state.numPiecesDropped
+      _numPiecesDropped: this.state.numPiecesDropped
     }));
 		this.throwEvent(BlockyEvent.BLOCKS(this));
 	}
@@ -225,7 +256,7 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * @return List of cleared rows, or null if no rows were cleared.
 	 */
 	clearLines(): number[] {
-		const fullRows = this._state.getFullRows();
+		const fullRows = this.state.getFullRows();
 
 		if (fullRows.length > 0) {
 			for (
@@ -241,16 +272,16 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 
 				// If row is empty, then all rows above are empty too.
 				// Clear rows (row + 1) through (row + numRowsToDrop)
-				if (this._state.isRowEmpty(row)) {
+				if (this.state.isRowEmpty(row)) {
 					for (let clearingRow = row + 1; clearingRow <= row + numRowsToDrop; clearingRow++) {
-						this._state.clearRow(clearingRow);
+						this.state.clearRow(clearingRow);
 					}
 
 					break;
 				}
 
 				// Shift row down by 'numRowsToDrop'
-				this._state.copyRow(row, row + numRowsToDrop);
+				this.state.copyRow(row, row + numRowsToDrop);
 			}
 		}
 
@@ -268,30 +299,30 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * Disables gravity if it is currently enabled.
 	 */
 	disableGravity(): void {
-		if (this.isGravityEnabled()) {
-			this.usingGravity = false;
+		this.usingGravity = false;
+
+		if (this.gravityTimer) {
 			this.gravityTimer.stop();
-			this.throwEvent(BlockyEvent.GRAVITY_DISABLED());
 		}
+
+		this.throwEvent(BlockyEvent.GRAVITY_DISABLED());
 	}
 
 	/**
-	 * Enables gravity if it is currently disabled.
+	 * Enables the gravity effect and initializes the timer if necessary.
 	 */
 	enableGravity(): void {
-		if (!this.isGravityEnabled()) {
-			this.usingGravity = true;
-      // this.gravityTimer.enable();
-      this.throwEvent(BlockyEvent.GRAVITY_ENABLED());
+		this.usingGravity = true;
+
+		if (!this.gravityTimer) {
+			this.gravityTimer = new Timer(this.gameloop.bind(this));
 		}
 
-    if (this._state.hasStarted && !this._state.isGameOver && !this._state.isPaused) {
-      this.gravityTimer.start(this.gravityDelayMsForLevel());
-    }
+		this.throwEvent(BlockyEvent.GRAVITY_ENABLED());
 	}
 
   gravityDelayMsForLevel(): number {
-    return Math.round((Math.pow(0.8 - (this._state.level) * 0.007, this._state.level)) * 1000.0);
+    return Math.round((Math.pow(0.8 - (this.state.level) * 0.007, this.state.level)) * 1000.0);
   }
 
 	/**
@@ -301,8 +332,8 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 */
 	updateGravityTimerDelayMs(): number {
 		const delay = this.gravityDelayMsForLevel();
-		if (this.isGravityEnabled()) {
-			this.gravityTimer.delay = delay;
+		if (this.gravityTimer) {
+			this.gravityTimer!.delay = delay;
 		}
 		return delay;
 	}
@@ -317,10 +348,10 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 		const lines = this.clearLines();
 
 		if (lines.length > 0) {
-			this._state.linesCleared += lines.length;
-			this._state.score += this.calcPointsForClearing(lines.length);
-			this._state.linesUntilNextLevel -= lines.length;
-			this._state.isClearingLines = true;
+			this.state.linesCleared += lines.length;
+			this.state.score += this.calcPointsForClearing(lines.length);
+			this.state.linesUntilNextLevel -= lines.length;
+			this.state.isClearingLines = true;
 
 			this.throwEvent(BlockyEvent.LINE_CLEAR(this, lines));
 			this.throwEvent(BlockyEvent.SCORE_UPDATE(this));
@@ -337,11 +368,11 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * @return True if the game is over; otherwise false.
 	 */
 	checkGameOver(): boolean {
-		if (this._state.isGameOver) {
+		if (this.state.isGameOver) {
 			return true;
 		}
 
-		if (this._state.pieceOverlapsBlocks()) {
+		if (this.state.pieceOverlapsBlocks()) {
 			this.gameOver();
 			return true;
 		}
@@ -353,8 +384,8 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * Increases the level by 1, and updates the gravity timer delay.
 	 */
 	increaseLevel(): void {
-		this._state.level++;
-		this._state.linesUntilNextLevel += this._state.linesPerLevel();
+		this.state.level++;
+		this.state.linesUntilNextLevel += this.state.getLinesPerLevel();
 		this.updateGravityTimerDelayMs();
 		this.throwEvent(BlockyEvent.LEVEL_UPDATE(this));
 	}
@@ -362,11 +393,12 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	/**
 	 * Resets the game state.
 	 */
-	reset(): void {
-		this._state.reset();
-		this.numTimerPushbacks = 0;
-		this.throwEvent(BlockyEvent.RESET(this));
-	}
+	// reset(): void {
+	// 	this._state.reset();
+	// 	this.numTimerPushbacks = 0;
+	// 	this.ticksUntilNextGravity = 0;
+	// 	this.throwEvent(BlockyEvent.RESET(this));
+	// }
 
 	/**
 	 * Ends the game.
@@ -374,13 +406,13 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * The gravity timer is stopped.
 	 */
 	gameOver(): void {
-		this._state.isGameOver = true;
-		this._state.isPaused = false;
-		this._state.isClearingLines = false;
-		this._state.placePiece();
+		this.state.isGameOver = true;
+		this.state.isPaused = false;
+		this.state.isClearingLines = false;
+		this.state.placePiece();
 
 		if (this.isGravityEnabled()) {
-			this.gravityTimer.stop();
+			this.gravityTimer!.stop();
 		}
 
 		this.throwEvent(BlockyEvent.GAME_OVER(this));
@@ -396,7 +428,7 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * @return True if the piece was rotated; otherwise false.
 	 */
 	handleRotation(direction: Move): boolean {
-		if (!this._state.piece.isActive || this._state.isPaused || this._state.isGameOver) {
+		if (!this.state.piece.isActive || this.state.isPaused || this.state.isGameOver) {
 			return false;
 		}
 
@@ -404,7 +436,7 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 			// If next gravity tick will plop the piece, maybe rotation should delay that
 			// a little to give the user time to make final adjustments.
 			// This is an anti-frustration technique.
-			if (!this._state.canPieceMove(Move.DOWN) && this.numTimerPushbacks < 4) {
+			if (!this.state.canPieceMove(Move.DOWN) && this.numTimerPushbacks < 4) {
 				// if (gameTimer != null) {
 				// 	gameTimer.resetTickDelay();
 					// System.out.println(gameTimer.resetTickDelay());
@@ -423,7 +455,7 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	shift(rowOffset: number, colOffset: number): boolean {
 		const move = new Move(new Coord(rowOffset, colOffset), 0);
 		if (this.shiftPiece(move)) {
-			if (!this._state.canPieceMove(Move.DOWN) && this.numTimerPushbacks < 4) {
+			if (!this.state.canPieceMove(Move.DOWN) && this.numTimerPushbacks < 4) {
 				this.numTimerPushbacks++;
 			}
 
@@ -433,7 +465,7 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 					this.updateGravityTimerDelayMs();
 				}
 
-				this.gravityTimer.delayNextTick();
+				this.gravityTimer!.delayNextTick();
 			}
 
 			// this.throwEvent(BlockyEvent.PIECE_SHIFT(this));
@@ -496,9 +528,9 @@ export default class Blocky implements IBlockyGame, IEventBussy {
 	 * Resets the piece to the top of the board with the next shape.
 	 */
 	nextPiece(): void {
-		this._state.resetPiece();
+		this.state.resetPiece();
 		this.throwEvent(BlockyEvent.PIECE_CREATE(this).add({
-      _nextShapes: this._state.nextShapes
+      _nextShapes: this.state.nextShapes
     }));
 	}
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import Blocky from '../blocky/Blocky';
 import { EventListener } from '../event/Event';
 import BlockyEvent from '../blocky/BlockyEvent';
@@ -15,30 +15,47 @@ import '@vaadin/icons';
 
 const bgColor = '#000';
 
-export default function BlockyBoard() {
-  const [dimensions, setDimensions] = useState(defaultDimensions);
+type Props = {
+  state?: BlockyState;
+  blockSize?: number;
+  previewBlockSize?: number;
+  previewAmt?: number;
+};
+
+const defaultProps = {
+  state: new BlockyState(),
+  blockSize: 24,
+  previewBlockSize: 16,
+  previewAmt: 4,
+};
+
+export default function BlockyBoard(props: Props) {
+  const mergedProps = Object.assign({}, defaultProps, props);
+  const STATE = mergedProps.state;
+  const ROWS = STATE.rows;
+  const COLS = STATE.cols;
+  const WIDTH = COLS * mergedProps.blockSize;
+  const HEIGHT = ROWS * mergedProps.blockSize;
+
+  const game: IBlockyGame = new Blocky(STATE);
+  let board = STATE.board;
+
   const boardCanvasRef = useRef<HTMLCanvasElement>(null);
   const nextPieceCanvasRef = useRef<HTMLCanvasElement>(null);
   const scoreRef = useRef<HTMLDivElement>(null);
   const levelRef = useRef<HTMLDivElement>(null);
 
-  let board : number[] = Array(dimensions.rows * dimensions.columns).fill(0);
-  const state: BlockyState = new BlockyState();
-  const game: IBlockyGame = new Blocky(state);
-
-  const width = () => dimensions.columns * dimensions.blockSize;
-  const height = () => dimensions.rows * dimensions.blockSize;
   const canvasContext = (canvasRef: React.RefObject<HTMLCanvasElement>) => canvasRef.current?.getContext('2d');
 
   const renderCenterText = (
     context: CanvasRenderingContext2D,
     text: string,
-    fontSize: number = dimensions.blockSize
+    fontSize: number = mergedProps.blockSize
   ) => {
     context.fillStyle = '#fff';
     context.font = `${fontSize}px Roboto Mono`;
     context.textAlign = 'center';
-    context.fillText(text, width() / 2, height() / 2);
+    context.fillText(text, WIDTH/2, HEIGHT/2);
   };
 
   const renderBoard = () => {
@@ -50,15 +67,15 @@ export default function BlockyBoard() {
 
     // Fill black background
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, width(), height());
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     // If the game is paused or hasn't yet started, don't draw anything
-    if (!state.hasStarted) {
-      renderCenterText(ctx, 'Press Enter to Start', dimensions.blockSize/2);
+    if (!STATE.hasStarted) {
+      renderCenterText(ctx, 'Press Enter to Start', mergedProps.blockSize/2);
       return;
     }
 
-    if (state.isPaused) {
+    if (STATE.isPaused) {
       renderCenterText(ctx, 'Paused');
       return;
     }
@@ -70,8 +87,9 @@ export default function BlockyBoard() {
       }
     });
 
-    if (state.isGameOver) {
+    if (STATE.isGameOver) {
       renderCenterText(ctx, 'Game Over');
+      return;
     }
   };
 
@@ -82,58 +100,61 @@ export default function BlockyBoard() {
       return;
     }
 
-    ctx.clearRect(0, 0, dimensions.previewSize*5, dimensions.previewSize*3*dimensions.previewAmt);
+    ctx.clearRect(
+      0, 0,
+      5*mergedProps.previewBlockSize, 3*mergedProps.previewBlockSize*mergedProps.previewAmt
+    );
 
     // If the game is paused or hasn't yet started, don't draw anything
-    if (!state.hasStarted || state.isPaused) {
+    if (!STATE.hasStarted || STATE.isPaused) {
       return;
     }
 
     // Draw blocks
-    const nextShapes = state.getNextShapes(dimensions.previewAmt);
+    const nextShapes = STATE.getNextShapes(mergedProps.previewAmt);
 
     let row = 1;
     const col = 2;
 
-    nextShapes.forEach((shape, index) => {
+    nextShapes.forEach((shape) => {
       shape.getRotation(0).forEach((coord: Coord) => {
         // Fill main color
         ctx.fillStyle = shapeColors[shape.value][1];
         ctx.fillRect(
-          (coord.col + col) * dimensions.previewSize,
-          (coord.row + row) * dimensions.previewSize,
-          dimensions.previewSize,
-          dimensions.previewSize
+          (coord.col + col) * mergedProps.previewBlockSize,
+          (coord.row + row) * mergedProps.previewBlockSize,
+          mergedProps.previewBlockSize,
+          mergedProps.previewBlockSize
         );
 
         // draw top and left border lines
         ctx.fillStyle = shapeColors[shape.value][0];
         ctx.fillRect(
-          (coord.col + col) * dimensions.previewSize,
-          (coord.row + row) * dimensions.previewSize,
-          dimensions.previewSize,
+          (coord.col + col) * mergedProps.previewBlockSize,
+          (coord.row + row) * mergedProps.previewBlockSize,
+          mergedProps.previewBlockSize,
           1
         );
         ctx.fillRect(
-          (coord.col + col) * dimensions.previewSize,
-          (coord.row + row) * dimensions.previewSize,
+          (coord.col + col) * mergedProps.previewBlockSize,
+          (coord.row + row) * mergedProps.previewBlockSize,
           1,
-          dimensions.previewSize
+          mergedProps.previewBlockSize
         );
 
         // draw bottom and right border lines
         ctx.fillStyle = shapeColors[shape.value][2];
         ctx.fillRect(
-          (coord.col + col) * dimensions.previewSize,
-          ((coord.row + row) + 1) * dimensions.previewSize - 1,
-          dimensions.previewSize,
+          (coord.col + col) * mergedProps.previewBlockSize,
+          ((coord.row + row) + 1) * mergedProps.previewBlockSize - 1,
+          mergedProps.previewBlockSize,
           1
         );
         ctx.fillRect(
-          ((coord.col + col) + 1) * dimensions.previewSize - 1,
-          (coord.row + row) * dimensions.previewSize,
+          ((coord.col + col) + 1) * mergedProps.previewBlockSize - 1,
+          (coord.row + row) * mergedProps.previewBlockSize,
           1,
-          dimensions.previewSize
+          mergedProps.previewBlockSize
         );
       });
 
@@ -158,9 +179,9 @@ export default function BlockyBoard() {
     const rect = boardCanvasRef.current?.getBoundingClientRect();
     const x = event.clientX - rect!.left;
     const y = event.clientY - rect!.top;
-    const row = bounded(Math.floor(y / dimensions.blockSize), 0, dimensions.rows - 1);
-    const col = bounded(Math.floor(x / dimensions.blockSize), 0, dimensions.columns - 1);
-    const index = row * dimensions.columns + col;
+    const row = bounded(Math.floor(y / mergedProps.blockSize), 0, ROWS - 1);
+    const col = bounded(Math.floor(x / mergedProps.blockSize), 0, COLS - 1);
+    const index = row * COLS + col;
 
     // console.log(`Mouse ${event.button} at {${row}, ${col}} index ${index}`);
 
@@ -189,150 +210,52 @@ export default function BlockyBoard() {
     renderBoard();
   };
 
-  useEffect(() => {
-    const boardCanvas = boardCanvasRef.current;
-    if (!boardCanvas) {
-      return;
-    }
-
-    renderBoard();
-
-    // boardCanvas.addEventListener('mousedown', mouseListener);
-    // boardCanvas.addEventListener('mouseup', mouseUpListener);
-    boardCanvas.addEventListener('contextmenu', contextMenuListener);
-    // boardCanvas.addEventListener('mousemove', mouseMoveListener);
-
-    const keyListeners = {
-      ArrowLeft: () => game.moveLeft(),
-      ArrowRight: () => game.moveRight(),
-      ArrowDown: () => game.moveDown(),
-      Enter: () => {
-        if (state.isGameOver) {
-          game.newGame();
-        } else if (!state.hasStarted) {
-          game.start(0, true);
-        } else if (state.isPaused) {
-          game.resume();
-        } else {
-          game.pause();
-        }
-      },
-      Space: () => {}, // Disable spacebar scrolling
-      // Z to rotate clockwise
-      z: () => {
-        if (!game.rotateClockwise()) {
-          // log the game state to see what happened
-          console.log('Cannot rotate clockwise');
-          console.log(JSON.stringify(game.getState()));
-        }
-      },
-      x: () => game.rotateCounterClockwise(),
-    } as { [key: string]: () => any };
-
-    window.addEventListener('keydown', (event) => {
-      if (keyListeners[event.key]) {
-        keyListeners[event.key]();
-        event.preventDefault();
+  const keyListenersMap = {
+    ArrowLeft: () => game.moveLeft(),
+    ArrowRight: () => game.moveRight(),
+    ArrowDown: () => game.moveDown(),
+    Enter: () => {
+      if (STATE.isGameOver) {
+        game.setup();
+      } else if (!STATE.hasStarted) {
+        game.start();
+      } else if (STATE.isPaused) {
+        game.resume();
+      } else {
+        game.pause();
       }
-    });
+    },
+    Space: () => {}, // Disable spacebar scrolling
+    z: () => game.rotateClockwise(),
+    x: () => game.rotateCounterClockwise(),
+  } as { [key: string]: () => any };
 
-    return () => {
-      // boardCanvas.removeEventListener('mousedown', mouseListener);
-      // boardCanvas.removeEventListener('mouseup', mouseUpListener);
-      boardCanvas.removeEventListener('contextmenu', contextMenuListener);
-      // boardCanvas.removeEventListener('mousemove', mouseMoveListener);
-    };
-  }, [dimensions]);
-
-  const drawBlockAtIndex = (index: number) => {
-    drawBlock(
-      Math.floor(index / dimensions.columns),
-      index % dimensions.columns
-    );
-  }
-
-  const drawBlock = (row: number, col: number) => {
-    const canvas = boardCanvasRef.current;
-    const context = (canvas) ? canvas.getContext('2d') : null;
-
-    // fill rectangle with the given shape color at given row and column
-    if (context) {
-      const shapeVal = board[row * state.cols + col];
-
-      // Fill in the center of the rectangle
-      context.fillStyle = shapeColors[shapeVal][1];
-      // If the game is over, add partial transparency to fillStyle
-      if (state.isGameOver) {
-        context.fillStyle += '40';
-      }
-      context.fillRect(
-        col * dimensions.blockSize,
-        row * dimensions.blockSize,
-        dimensions.blockSize,
-        dimensions.blockSize
-      );
-
-      // draw top and left border lines
-      context.fillStyle = shapeColors[shapeVal][0];
-      if (state.isGameOver) {
-        context.fillStyle += '40';
-      }
-      context.fillRect(
-        col * dimensions.blockSize,
-        row * dimensions.blockSize,
-        dimensions.blockSize,
-        1
-      );
-      context.fillRect(
-        col * dimensions.blockSize,
-        row * dimensions.blockSize,
-        1,
-        dimensions.blockSize
-      );
-
-      // draw bottom and right border lines
-      context.fillStyle = shapeColors[shapeVal][2];
-      if (state.isGameOver) {
-        context.fillStyle += '40';
-      }
-      context.fillRect(
-        col * dimensions.blockSize,
-        (row + 1) * dimensions.blockSize - 1,
-        dimensions.blockSize,
-        1
-      );
-      context.fillRect(
-        (col + 1) * dimensions.blockSize - 1,
-        row * dimensions.blockSize,
-        1,
-        dimensions.blockSize
-      );
-    } else {
-      console.warn('No graphics context to draw block');
+  const keyDownListener = (event: KeyboardEvent) => {
+    if (keyListenersMap[event.key]) {
+      keyListenersMap[event.key]();
+      event.preventDefault();
     }
   };
 
   const mapStateToBoard = (): void => {
-    board = state.board;
+    board = STATE.board;
 
-    if (state.piece.isActive) {
-      state.piece.blockCoords.forEach(
-        (coord: Coord) => board[coord.row * state.cols + coord.col] = state.piece.shape.value
+    if (STATE.piece.isActive) {
+      STATE.piece.blockCoords.forEach(
+        (coord: Coord) => board[coord.row * COLS + coord.col] = STATE.piece.shape.value
       );
     }
   };
 
   const updateLevelLabel = (): void => {
-    levelRef.current!.innerText = `Level\n${state.level}`;
+    levelRef.current!.innerText = `Level\n${STATE.level}`;
   };
 
   const updateScoreLabel = (): void => {
-    scoreRef.current!.innerText = `Score\n${state.score}`;
+    scoreRef.current!.innerText = `Score\n${STATE.score}`;
   };
 
   const onEvent = ((event: BlockyEvent): void => {
-    console.log(`Event: ${event.name}`);
-
     if (event.name === BlockyEvent.GAME_OVER.name) {
       console.log(JSON.stringify(event.data.state));
     }
@@ -351,7 +274,105 @@ export default function BlockyBoard() {
     renderNextPiece();
 	}) as EventListener;
 
-  BlockyEvent.ALL.forEach((eventName) => game.registerEventListener(eventName, onEvent));
+  useEffect(() => {
+    console.log('BlockyBoard mounted');
+
+    const boardCanvas = boardCanvasRef.current;
+    if (!boardCanvas) {
+      return;
+    }
+
+    // TODO pass in options
+    game.setup();
+
+    renderBoard();
+
+    // boardCanvas.addEventListener('mousedown', mouseListener);
+    // boardCanvas.addEventListener('mouseup', mouseUpListener);
+    boardCanvas.addEventListener('contextmenu', contextMenuListener);
+    // boardCanvas.addEventListener('mousemove', mouseMoveListener);
+
+    window.addEventListener('keydown', keyDownListener);
+
+    BlockyEvent.ALL.forEach((eventName) => game.registerEventListener(eventName, onEvent));
+
+    return () => {
+      // boardCanvas.removeEventListener('mousedown', mouseListener);
+      // boardCanvas.removeEventListener('mouseup', mouseUpListener);
+      boardCanvas.removeEventListener('contextmenu', contextMenuListener);
+      // boardCanvas.removeEventListener('mousemove', mouseMoveListener);
+      window.removeEventListener('keydown', keyDownListener);
+      game.dispose();
+    };
+  }, [mergedProps]);
+
+  const drawBlockAtIndex = (index: number) => {
+    drawBlock(
+      Math.floor(index / COLS),
+      index % COLS
+    );
+  }
+
+  const drawBlock = (row: number, col: number) => {
+    const canvas = boardCanvasRef.current;
+    const context = (canvas) ? canvas.getContext('2d') : null;
+
+    // fill rectangle with the given shape color at given row and column
+    if (context) {
+      const shapeVal = board[row * COLS + col];
+
+      // Fill in the center of the rectangle
+      context.fillStyle = shapeColors[shapeVal][1];
+      // If the game is over, add partial transparency to fillStyle
+      if (STATE.isGameOver) {
+        context.fillStyle += '40';
+      }
+      context.fillRect(
+        col * mergedProps.blockSize,
+        row * mergedProps.blockSize,
+        mergedProps.blockSize,
+        mergedProps.blockSize
+      );
+
+      // draw top and left border lines
+      context.fillStyle = shapeColors[shapeVal][0];
+      if (STATE.isGameOver) {
+        context.fillStyle += '40';
+      }
+      context.fillRect(
+        col * mergedProps.blockSize,
+        row * mergedProps.blockSize,
+        mergedProps.blockSize,
+        1
+      );
+      context.fillRect(
+        col * mergedProps.blockSize,
+        row * mergedProps.blockSize,
+        1,
+        mergedProps.blockSize
+      );
+
+      // draw bottom and right border lines
+      context.fillStyle = shapeColors[shapeVal][2];
+      if (STATE.isGameOver) {
+        context.fillStyle += '40';
+      }
+      context.fillRect(
+        col * mergedProps.blockSize,
+        (row + 1) * mergedProps.blockSize - 1,
+        mergedProps.blockSize,
+        1
+      );
+      context.fillRect(
+        (col + 1) * mergedProps.blockSize - 1,
+        row * mergedProps.blockSize,
+        1,
+        mergedProps.blockSize
+      );
+    } else {
+      console.warn('No graphics context to draw block');
+    }
+  };
 
   const labelStyle = {
     font: '16px Roboto Mono',
@@ -363,26 +384,20 @@ export default function BlockyBoard() {
       <HorizontalLayout theme="spacing">
         <canvas
           ref={boardCanvasRef}
-          width={width()}
-          height={height()}
+          width={WIDTH}
+          height={HEIGHT}
           className="border rounded-s border-contrast-50"
           style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
         />
         <canvas
           ref={nextPieceCanvasRef}
-          width={dimensions.previewSize * 5}
-          height={dimensions.previewSize * 4 * dimensions.previewAmt}
+          width={mergedProps.previewBlockSize * 5}
+          height={mergedProps.previewBlockSize * 4 * mergedProps.previewAmt}
           style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
         />
         <VerticalLayout theme="spacing">
-          <div
-            ref={scoreRef}
-            style={labelStyle}
-          ></div>
-          <div
-            ref={levelRef}
-            style={labelStyle}
-          ></div>
+          <div ref={scoreRef} style={labelStyle}></div>
+          <div ref={levelRef} style={labelStyle}></div>
         </VerticalLayout>
       </HorizontalLayout>
       <VerticalLayout
@@ -391,22 +406,12 @@ export default function BlockyBoard() {
         className='border rounded-s border-contrast-50'
         style={labelStyle}
       >
-        <HorizontalLayout
-          theme='spacing'
-          style={{ width: '100%' }}
-        >
+        <HorizontalLayout theme='spacing' style={{ width: '100%' }}>
           <div><strong>Controls</strong></div>
-          <div
-            style={{ flexGrow: 1 }}
-          >
-            { /* Icon that is right-aligned in its parent div */ }
+          <div style={{ flexGrow: 1 }}>
             <Icon
               icon="vaadin:close"
-              style={{
-                color: 'darkred',
-                float: 'right'
-              }}
-              // On click, hide the controls VerticalLayout
+              style={{ color: 'darkred', float: 'right' }}
               onClick={() => document.getElementById('controls')!.style.display = 'none'}
             />
           </div>
@@ -419,13 +424,7 @@ export default function BlockyBoard() {
   );
 }
 
-const defaultDimensions = {
-  rows: 20,
-  columns: 10,
-  blockSize: 24,
-  previewSize: 16,
-  previewAmt: 4,
-};
+BlockyBoard.defaultProps = defaultProps;
 
 const shapeColors = [
   ['#000000', '#000000', '#000000'], // empty
