@@ -1,9 +1,10 @@
-import EventBus from "../event/EventBus";
 import { Event, EventListener } from "../event/Event";
+import EventBus from "../event/EventBus";
 import Move from "../structs/Move";
 import Blocky from "./Blocky";
 import BlockyEvent, { BlockyEventName } from "./BlockyEvent";
 import BlockyState from "./BlockyState";
+import { GameOptions } from "./IBlockyGame";
 
 const mockTimer = {
   delayNextTick: jest.fn(),
@@ -14,14 +15,20 @@ const mockTimer = {
 jest.mock('../util/Timer', () => jest.fn().mockImplementation(() => mockTimer));
 
 describe("Blocky", () => {
+  let options: GameOptions;
   let state: BlockyState;
   let blocky: Blocky;
 
+  const setupWithOptions = (newOptions: object) => {
+    blocky.setup(Object.assign(options, newOptions));
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
-    state = new BlockyState();
+    options = BlockyState.defaultOptions();
+    state = new BlockyState(options);
     blocky = new Blocky(state);
-    blocky.newGame();
+    blocky.setup();
   });
 
   const expectEventsThrown = (eventNames: BlockyEventName[], exe: () => any) => {
@@ -88,10 +95,49 @@ describe("Blocky", () => {
   const expectStateMethodCalled = (methodName: string, exe: () => any) => expectStateMethodsCalled([methodName], exe);
   const expectStateMethodNotCalled = (methodName: string, exe: () => any) => expectStateMethodsNotCalled([methodName], exe);
 
-  describe('newGame', () => {
-    test('defers to reset and throws NEW_GAME event', () => {
-      expectMethodCalled('reset', () => blocky.newGame());
-      expectEventThrown('NEW_GAME', () => blocky.newGame());
+  describe('setup', () => {
+    describe('when the game has already been started', () => {
+      test('stops the game', () => {
+        expectMethodCalled('stop', () => {
+          blocky.start();
+          blocky.setup();
+        });
+      });
+    });
+
+    test('resets the game state with the given options', () => {
+      const newRows = 10;
+      const newCols = 20;
+      const newOptions = Object.assign(
+        BlockyState.defaultOptions(),
+        { rows: newRows, cols: newCols }
+      );
+      jest.spyOn(state, 'reset');
+
+      blocky.setup(newOptions);
+
+      expect(state.reset).toHaveBeenCalledWith(newOptions);
+      expect(state.rows).toBe(newRows);
+      expect(state.cols).toBe(newCols);
+    });
+
+    test('throws SETUP event', () => {
+      expectEventThrown('SETUP', () => blocky.setup());
+    });
+
+    describe('when the gravity effect in options', () => {
+      describe('if configured true (ON)', () => {
+        // Gravity is enabled by default
+        test('enables the gravity effect', () => {
+          expectMethodCalled('enableGravity', () => blocky.setup());
+        });
+      });
+
+      describe('if configured false (OFF)', () => {
+        test('disables the gravity effect', () => {
+          expectMethodCalled('disableGravity', () => setupWithOptions({ useGravity: false }));
+        });
+      });
     });
   });
 
@@ -102,22 +148,17 @@ describe("Blocky", () => {
       });
 
       test('does not throw an event', () => {
-        expectNoEventsThrown(() => blocky.start(0, false));
+        expectNoEventsThrown(() => blocky.start());
       });
     });
 
     describe('when the game has not yet started', () => {
-      test('sets to the given level', () => {
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(level => {
-          blocky.newGame();
-          blocky.start(level, false);
-          expect(state.level).toBe(level);
-        });
-      });
+      const startWithoutGravity = () => {
+        setupWithOptions({ useGravity: false });
+        blocky.start();
+      }
 
-      const startWithoutGravity = () => blocky.start(0, false);
-
-      test('defers to nextPiece', () => {
+      test('sets up the first game piece', () => {
         expectMethodCalled('nextPiece', startWithoutGravity);
       });
 
@@ -125,21 +166,19 @@ describe("Blocky", () => {
         expectEventThrown('START', startWithoutGravity);
       });
 
-      describe('when useGravity is true', () => {
+      describe('when the gravity option is set true', () => {
         test('enables gravity and sets the timer delay', () => {
-          expectMethodsCalled(
-            [ 'enableGravity', 'updateGravityTimerDelayMs' ],
-            () => blocky.start(0, true)
-          );
+          expectMethodCalled('updateGravityTimerDelayMs', () => blocky.start());
         });
       });
 
-      describe('when useGravity is false', () => {
+      describe('when the gravity option is set false', () => {
         test('does not enable gravity or update the timer delay', () => {
-          expectMethodsNotCalled(
-            [ 'enableGravity', 'updateGravityTimerDelayMs' ],
-            startWithoutGravity
-          );
+          expectMethodNotCalled('updateGravityTimerDelayMs', startWithoutGravity);
+        });
+
+        test('disables gravity', () => {
+          expectMethodCalled('disableGravity', startWithoutGravity);
         });
       });
     });
@@ -166,6 +205,36 @@ describe("Blocky", () => {
       test('stops the gravity timer', () => {
         blocky.stop();
         expect(mockTimer.stop).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('inProgress', () => {
+    describe('before the game has started', () => {
+      test('returns false', () => {
+        expect(blocky.inProgress()).toBe(false);
+      });
+    });
+
+    describe('after the game has been started', () => {
+      beforeEach(() => {
+        blocky.start();
+      });
+
+      describe('before the game is over', () => {
+        test('returns true', () => {
+          expect(blocky.inProgress()).toBe(true);
+        });
+      });
+
+      describe('after the game is over', () => {
+        beforeEach(() => {
+          blocky.gameOver();
+        });
+
+        test('returns false', () => {
+          expect(blocky.inProgress()).toBe(false);
+        });
       });
     });
   });
@@ -302,6 +371,13 @@ describe("Blocky", () => {
     });
   });
 
+  describe('moveUp', () => {
+    test('returns false as it is not allowed', () => {
+      expect(blocky.moveUp()).toBe(false);
+      expectEventNotThrown('PIECE_SHIFT', () => blocky.moveUp());
+    });
+  });
+
   describe('moveDown', () => {
     test('defers to shift with the appropriate offset', () => {
       jest.spyOn(blocky, 'shift');
@@ -335,6 +411,28 @@ describe("Blocky", () => {
 
       expect(state).toBe(expectedState);
       expect(BlockyState.copy).toHaveBeenCalled();
+    });
+  });
+
+  describe('dispose', () => {
+    let mockListener: EventListener;
+
+    beforeEach(() => {
+      mockListener = jest.fn();
+      BlockyEvent.ALL.forEach(eventName => {
+        blocky.registerEventListener(eventName, mockListener);
+      });
+    });
+
+    test('removes all event listeners', () => {
+      blocky.dispose();
+      BlockyEvent.ALL.forEach(eventName => {
+        expect(blocky.unregisterEventListener(eventName, mockListener)).toBe(false);
+      });
+    });
+
+    test('stops the game', () => {
+      expectMethodCalled('stop', () => blocky.dispose());
     });
   });
 
@@ -462,7 +560,7 @@ describe("Blocky", () => {
         0,0,0,0,1,
         1,1,0,0,0,
         0,1,1,0,0,
-        1,1,1,1,1, //
+        1,1,1,1,1, // full
         1,1,1,1,1, //
         0,0,1,1,0,
         1,1,1,1,1  //
@@ -482,8 +580,13 @@ describe("Blocky", () => {
       ];
 
       beforeEach(() => {
-        state = new BlockyState(board.length / cols, cols);
+        const options = BlockyState.defaultOptions();
+        options.rows = board.length / cols;
+        options.cols = cols;
+
+        state = new BlockyState(options);
         blocky = new Blocky(state);
+
         board.forEach((block, index) => {
           state.setCellByIndex(index, block);
         });
@@ -511,105 +614,33 @@ describe("Blocky", () => {
   });
 
   describe('disableGravity', () => {
-    describe('when gravity is already disabled', () => {
-      beforeEach(() => {
-        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(false);
-      });
+    test('disables gravity and throws the GRAVITY_DISABLED event', () => {
+      const eventName = 'GRAVITY_DISABLED';
+      const mockEvent = new BlockyEvent(eventName);
+      jest.spyOn(blocky, 'throwEvent');
+      jest.spyOn(BlockyEvent, eventName).mockReturnValue(mockEvent);
 
-      test('does not throw GRAVITY_DISABLED event', () => {
-        expectNoEventsThrown(() => blocky.disableGravity());
-      });
-    });
-
-    describe('when gravity is enabled', () => {
-      beforeEach(() => {
-        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
-      });
-
-      test('throws GRAVITY_DISABLED event', () => {
-        expectEventThrown('GRAVITY_DISABLED', () => blocky.disableGravity());
-      });
-
-      test('stops the gravity timer', () => {
-        blocky.disableGravity();
-        expect(mockTimer.stop).toHaveBeenCalled();
-      });
+      expect(blocky.isGravityEnabled()).toBe(true);
+      blocky.disableGravity();
+      expect(blocky.isGravityEnabled()).toBe(false);
+      expect(mockTimer.stop).toHaveBeenCalled();
+      expect(BlockyEvent[eventName]).toHaveBeenCalled();
+      expect(blocky.throwEvent).toHaveBeenCalledWith(mockEvent);
     });
   });
 
   describe('enableGravity', () => {
-    describe('when gravity is already enabled', () => {
-      beforeEach(() => {
-        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(true);
-      });
+    test('enables gravity and throws the GRAVITY_ENABLED event', () => {
+      const mockEvent = new BlockyEvent('GRAVITY_ENABLED');
+      setupWithOptions({ useGravity: false });
+      jest.spyOn(blocky, 'throwEvent');
+      jest.spyOn(BlockyEvent, 'GRAVITY_ENABLED').mockReturnValue(mockEvent);
 
-      test('does not throw any events', () => {
-        expectNoEventsThrown(() => blocky.enableGravity());
-      });
-    });
-
-    describe('when gravity is disabled', () => {
-      beforeEach(() => {
-        jest.spyOn(blocky, 'isGravityEnabled').mockReturnValue(false);
-      });
-
-      describe('when the game is over', () => {
-        beforeEach(() => {
-          jest.spyOn(state, 'isGameOver', 'get').mockReturnValue(true);
-        });
-
-        test('does not start the gravity timer', () => {
-          blocky.enableGravity();
-          expect(mockTimer.start).not.toHaveBeenCalled();
-        });
-      });
-
-      describe('when the game is not over', () => {
-        beforeEach(() => {
-          jest.spyOn(state, 'isGameOver', 'get').mockReturnValue(false);
-        });
-
-        describe('when the game has not yet started', () => {
-          beforeEach(() => {
-            jest.spyOn(state, 'hasStarted', 'get').mockReturnValue(false);
-          });
-
-          test('does not start the gravity timer', () => {
-            blocky.enableGravity();
-            expect(mockTimer.start).not.toHaveBeenCalled();
-          });
-        });
-
-        describe('when the game has started', () => {
-          beforeEach(() => {
-            jest.spyOn(state, 'hasStarted', 'get').mockReturnValue(true);
-          });
-
-          describe('when the game is paused', () => {
-            beforeEach(() => {
-              jest.spyOn(state, 'isPaused', 'get').mockReturnValue(true);
-            });
-
-            test('does not start the gravity timer', () => {
-              blocky.enableGravity();
-              expect(mockTimer.start).not.toHaveBeenCalled();
-            });
-          });
-
-          describe('when the game is not paused', () => {
-            beforeEach(() => {
-              jest.spyOn(state, 'isPaused', 'get').mockReturnValue(false);
-            });
-
-            test('starts the gravity timer', () => {
-              const gravityDelayMs = 1234;
-              jest.spyOn(blocky, 'gravityDelayMsForLevel').mockReturnValue(gravityDelayMs);
-              blocky.enableGravity();
-              expect(mockTimer.start).toHaveBeenCalledWith(gravityDelayMs);
-            });
-          });
-        });
-      });
+      expect(blocky.isGravityEnabled()).toBe(false);
+      blocky.enableGravity();
+      expect(blocky.isGravityEnabled()).toBe(true);
+      expect(BlockyEvent.GRAVITY_ENABLED).toHaveBeenCalled();
+      expect(blocky.throwEvent).toHaveBeenCalledWith(mockEvent);
     });
   });
 
@@ -683,7 +714,7 @@ describe("Blocky", () => {
   describe('gameloop', () => {
     beforeEach(() => {
       blocky.disableGravity();
-      blocky.start(0, false);
+      blocky.start();
     });
 
     describe('when the game is over', () => {
@@ -927,7 +958,7 @@ describe("Blocky", () => {
 
     beforeEach(() => {
       linesPerLevel = 10;
-      jest.spyOn(state, 'linesPerLevel').mockReturnValue(linesPerLevel);
+      jest.spyOn(state, 'getLinesPerLevel').mockReturnValue(linesPerLevel);
     });
 
     test('increments state level', () => {
@@ -948,16 +979,6 @@ describe("Blocky", () => {
 
     test('throws the LEVEL_UPDATE event', () => {
       expectEventThrown('LEVEL_UPDATE', () => blocky.increaseLevel());
-    });
-  });
-
-  describe('reset', () => {
-    test('resets the game state', () => {
-      expectStateMethodCalled('reset', () => blocky.reset());
-    });
-
-    test('throws the RESET event', () => {
-      expectEventThrown('RESET', () => blocky.reset());
     });
   });
 

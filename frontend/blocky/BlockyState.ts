@@ -1,26 +1,38 @@
 import Coord from '../structs/Coord';
 import Move from '../structs/Move';
-import Piece from './Piece';
 import Position from '../structs/Position';
-import { SHAPES, Shape } from './Shape';
-import ShapeQueue from './ShapeQueue';
 import { bounded, validatePositiveInteger } from '../util/Util';
 
+import { GameOptions } from './IBlockyGame';
+import Piece from './Piece';
+import { SHAPES, Shape } from './Shape';
+import ShapeQueue from './ShapeQueue';
+
 export default class BlockyState {
-	// TODO experiment with different values
+	/**
+	 * Default options for the game.
+	 */
+	private static readonly DEFAULT_OPTIONS: GameOptions = Object.freeze({
+		level: 0,
+		useGravity: true,
+		rows: 20,
+		cols: 10,
+		entryCoord: new Coord(1, 4).freeze(),
+		height: 0,
+		linesPerLevel: 10
+	});
+
+	/**
+	 * Returns some default options for the game.
+	 */
+	static defaultOptions(): GameOptions {
+		return { ...BlockyState.DEFAULT_OPTIONS };
+	}
+
 	static readonly MIN_ROWS = 5;
 	static readonly MIN_COLS = 5;
 	static readonly MAX_ROWS = 100;
 	static readonly MAX_COLS = 100;
-
-  static readonly DEFAULT_NUM_ROWS = 20;
-	static readonly DEFAULT_NUM_COLS = 10;
-  static readonly DEFAULT_LINES_PER_LEVEL = 10;
-
-	static readonly DEFAULT_ENTRY_COLUMN = BlockyState.calcEntryColumn(BlockyState.DEFAULT_NUM_COLS);
-  static readonly DEFAULT_ENTRY_COORD = new Coord(1, BlockyState.DEFAULT_ENTRY_COLUMN);
-
-  // TODO default points per line cleared
 
   /**
 	 * Calculates the column where pieces appear, which is the center column,
@@ -42,12 +54,7 @@ export default class BlockyState {
 	 * Creates a new BlockyState with the same values as the given BlockyState.
 	 */
 	static copy(other: BlockyState): BlockyState {
-    const copy = new BlockyState(
-      other.rows,
-      other.cols,
-      other.entryCoord,
-      other._linesPerLevel
-    );
+    const copy = new BlockyState(other._options);
 
 		copy._board = other._board.slice();
 		copy._isGameOver = other.isGameOver;
@@ -66,12 +73,10 @@ export default class BlockyState {
     return copy;
 	}
 
-  readonly rows: number = BlockyState.DEFAULT_NUM_ROWS;
-  readonly cols: number = BlockyState.DEFAULT_NUM_COLS;
-  readonly entryCoord: Coord = new Coord(1, BlockyState.calcEntryColumn(this.cols));
-
-	protected readonly _linesPerLevel: number | ((level: number) => number) = BlockyState.DEFAULT_LINES_PER_LEVEL;
-
+  protected _rows: number = BlockyState.DEFAULT_OPTIONS.rows;
+  protected _cols: number = BlockyState.DEFAULT_OPTIONS.cols;
+  protected _entryCoord: Coord = BlockyState.DEFAULT_OPTIONS.entryCoord;
+	protected _linesPerLevel: number | ((level: number) => number) = BlockyState.DEFAULT_OPTIONS.linesPerLevel;
   protected _board: number[] = [];
   protected _isGameOver: boolean = false;
   protected _isPaused: boolean = false;
@@ -85,63 +90,73 @@ export default class BlockyState {
   protected _dist: number[] = [];
   protected _nextShapes: ShapeQueue = new ShapeQueue();
   protected _piece: Piece = new Piece(
-		new Position(this.entryCoord, 0, this._nextShapes.peek().numRotations),
+		new Position(this._entryCoord, 0, this._nextShapes.peek().numRotations),
 		this._nextShapes.poll()
 	);
+	protected _options: GameOptions;
 
   // TODO private pointsPerLineClear: number[] | ((linesCleared: number, level: number) => number);
   // TODO create function to calculate points per line cleared based property
 
 	/**
 	 * Creates a new BlockyState with the given number of rows and columns.
+	 *
+	 * @param options The options for the game.
 	 */
-	constructor(
-    rows: number = BlockyState.DEFAULT_NUM_ROWS,
-    cols: number = BlockyState.DEFAULT_NUM_COLS,
-    entryCoord: Coord = new Coord(1, BlockyState.calcEntryColumn(cols)),
-    linesPerLevel: number | ((level: number) => number) = BlockyState.DEFAULT_LINES_PER_LEVEL
-  ) {
-		this.rows = validatePositiveInteger(rows, 'rows');
-		this.cols = validatePositiveInteger(cols, 'cols');
-
-		if (this.rows < BlockyState.MIN_ROWS || this.rows > BlockyState.MAX_ROWS) {
-			throw new Error(`rows must be between ${BlockyState.MIN_ROWS} and ${BlockyState.MAX_ROWS}`);
-		}
-
-		if (this.cols < BlockyState.MIN_COLS || this.cols > BlockyState.MAX_COLS) {
-			throw new Error(`cols must be between ${BlockyState.MIN_COLS} and ${BlockyState.MAX_COLS}`);
-		}
-
-		this.entryCoord = entryCoord;
-		this._linesPerLevel = linesPerLevel;
+	constructor(options?: GameOptions) {
+		this._options = Object.seal(
+			Object.assign(BlockyState.defaultOptions(), options)
+		);
 		this.reset();
 	}
 
 	/**
-	 * Resets the state of the game.
+	 * Resets the state of the game. This should only be called when the game is
+	 * not in progress.
+	 * The board can be optionally resized. If resizing, provide a new entryCoord.
+	 * This will clear the board, reset the score, level, and all other stats.
+	 *
+	 * @param options The options for the game.
 	 */
-	reset(): void {
-		this._board = Array(this.rows * this.cols).fill(0);
+	reset(options?: GameOptions): void {
+		if (this.isRunning()) {
+			console.warn('Reseting game while it is in progress.');
+		}
+
+		Object.assign(this._options, options);
+
+		this._rows = validatePositiveInteger(this._options.rows, 'rows');
+		this._cols = validatePositiveInteger(this._options.cols, 'cols');
+		this._entryCoord = this._options.entryCoord.freeze();
+		this._linesPerLevel = this._options.linesPerLevel;
+		this._board = Array(this._rows * this._cols).fill(0);
 		this._isGameOver = false;
 		this._isPaused = false;
 		this._isClearingLines = false;
 		this._hasStarted = false;
-		this._level = 0;
+		this._level = this._options.level;
 		this._score = 0;
 		this._linesCleared = 0;
 		this._numPiecesDropped = 0;
-		this._linesUntilNextLevel = this.linesPerLevel();
+		this._linesUntilNextLevel = this.getLinesPerLevel();
 		this._dist = Array(SHAPES.length).fill(0);
 		this._nextShapes = new ShapeQueue();
 		this._piece = new Piece(
-			new Position(this.entryCoord, 0, this._nextShapes.peek().numRotations),
+			new Position(this._entryCoord, 0, this._nextShapes.peek().numRotations),
 			this._nextShapes.poll()
 		);
+
+		// TODO if height is provided, populate the board with blocks accordingly
+		// if (options?.height) {
+		//
+		// }
 	}
 
-  /**
-   * Returns a copy of the board.
-   */
+	get rows(): number { return this._rows; }
+	get cols(): number { return this._cols; }
+	get entryCoord(): Coord { return this._entryCoord; }
+	get linesPerLevel(): number | ((level: number) => number) { return this._linesPerLevel; }
+  /** Returns a copy of the board. */
   get board(): number[] { return this._board.slice(); }
   get isGameOver(): boolean { return this._isGameOver; }
   get isPaused(): boolean { return this._isPaused; }
@@ -154,11 +169,9 @@ export default class BlockyState {
   get linesUntilNextLevel(): number { return this._linesUntilNextLevel; }
   get dist(): number[] { return this._dist.slice(); }
   get nextShapes(): ShapeQueue { return ShapeQueue.copy(this._nextShapes); }
-
-  /**
-   * Returns the current piece.
-   */
+  /** Returns the current piece. */
   get piece(): Piece { return this._piece; }
+	get options(): GameOptions { return Object.freeze({ ...this._options }); }
 
   set linesCleared(linesCleared: number) { this._linesCleared = linesCleared; }
   set score(score: number) { this._score = score; }
@@ -169,7 +182,7 @@ export default class BlockyState {
   set isGameOver(isGameOver: boolean) { this._isGameOver = isGameOver; }
   set isPaused(isPaused: boolean) { this._isPaused = isPaused; }
 
-  linesPerLevel(): number {
+  getLinesPerLevel(): number {
     return (typeof this._linesPerLevel === 'function') ?
       this._linesPerLevel(this.level) :
       this._linesPerLevel;
@@ -219,7 +232,7 @@ export default class BlockyState {
 			throw new Error(`Location ${location.toString()} is out of bounds`);
 		}
 
-    this._board[location.row * this.cols + location.col] = value;
+    this._board[location.row * this._cols + location.col] = value;
 	}
 
 	/**
@@ -249,7 +262,7 @@ export default class BlockyState {
 			throw new Error(`Location ${location.toString()} is out of bounds`);
 		}
 
-    return this._board[location.row * this.cols + location.col];
+    return this._board[location.row * this._cols + location.col];
 	}
 
 	/**
@@ -273,9 +286,9 @@ export default class BlockyState {
 	isLocationValid(location: Coord): boolean {
 		return (
 			location.row >= 0 &&
-			location.row < this.rows &&
+			location.row < this._rows &&
 			location.col >= 0 &&
-			location.col < this.cols
+			location.col < this._cols
 		);
 	}
 
@@ -396,7 +409,7 @@ export default class BlockyState {
 	 * @return True if the row is full; false otherwise.
 	 */
 	protected isRowFull(row: number): boolean {
-		for (let col = 0; col < this.cols; col++) {
+		for (let col = 0; col < this._cols; col++) {
 			// TODO get rid of wasteful instantiations
 			if (this.isCellEmpty(new Coord(row, col))) {
 				return false;
@@ -412,7 +425,7 @@ export default class BlockyState {
 	getFullRows(): number[] {
 		const lines: number[] = [];
 
-		for (let row = 0; row < this.rows; row++) {
+		for (let row = 0; row < this._rows; row++) {
 			if (this.isRowFull(row)) {
 				lines.push(row);
 			}
@@ -430,18 +443,18 @@ export default class BlockyState {
 	 */
 	copyRow(fromRow: number, toRow: number): void {
 		// Validate row indices
-		if (fromRow < 0 || fromRow >= this.rows) {
+		if (fromRow < 0 || fromRow >= this._rows) {
 			throw new Error(`fromRow ${fromRow} is out of bounds`);
 		}
 
-		if (toRow < 0 || toRow >= this.rows) {
+		if (toRow < 0 || toRow >= this._rows) {
 			throw new Error(`toRow ${toRow} is out of bounds`);
 		}
 
-		const fromRowStart = fromRow * this.cols;
-		const toRowStart = toRow * this.cols;
+		const fromRowStart = fromRow * this._cols;
+		const toRowStart = toRow * this._cols;
 
-		for (let col = 0; col < this.cols; col++) {
+		for (let col = 0; col < this._cols; col++) {
 			this._board[toRowStart + col] = this._board[fromRowStart + col];
 		}
 	}
@@ -454,12 +467,12 @@ export default class BlockyState {
 	 */
 	clearRow(row: number): void {
 		// Validate row index
-		if (row < 0 || row >= this.rows) {
+		if (row < 0 || row >= this._rows) {
 			throw new Error(`Row ${row} is out of bounds`);
 		}
 
-		for (let col = 0; col < this.cols; col++) {
-			this._board[row * this.cols + col] = 0;
+		for (let col = 0; col < this._cols; col++) {
+			this._board[row * this._cols + col] = 0;
 		}
 	}
 
@@ -472,11 +485,11 @@ export default class BlockyState {
 	 */
 	isRowEmpty(row: number): boolean {
 		// Validate row index
-		if (row < 0 || row >= this.rows) {
+		if (row < 0 || row >= this._rows) {
 			throw new Error(`Row ${row} is out of bounds`);
 		}
 
-		for (let i = row * this.cols; i < (row + 1) * this.cols; i++) {
+		for (let i = row * this._cols; i < (row + 1) * this._cols; i++) {
 			if (this._board[i] > 0) {
 				return false;
 			}
@@ -509,7 +522,7 @@ export default class BlockyState {
 	 * Resets the piece to the top of the board with the next shape from the queue.
 	 */
 	resetPiece(): void {
-		this.piece.reset(this.entryCoord, this._nextShapes.poll());
+		this.piece.reset(this._entryCoord, this._nextShapes.poll());
 	}
 
 	/**

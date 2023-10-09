@@ -3,12 +3,15 @@ import Move from "../structs/Move";
 import Position from "../structs/Position";
 import { Shape } from "./Shape";
 import BlockyState from "./BlockyState";
+import { GameOptions } from "./IBlockyGame";
 
 describe('BlockyState', () => {
+  let options: GameOptions;
   let state: BlockyState;
 
   beforeEach(() => {
-    state = new BlockyState();
+    options = BlockyState.defaultOptions();
+    state = new BlockyState(options);
   });
 
   describe('static', () => {
@@ -62,7 +65,11 @@ describe('BlockyState', () => {
         const badRowses = [-10, -1, 0, 1.5, 5.5, 10.1];
 
         badRowses.forEach((rows) => {
-          expect(() => new BlockyState(rows, 10)).toThrow();
+          expect(() => {
+            const options = BlockyState.defaultOptions();
+            options.rows = rows;
+            new BlockyState(options)
+          }).toThrow();
         });
       });
     });
@@ -72,27 +79,39 @@ describe('BlockyState', () => {
         const badColses = [-10, -1, 0, 1.5, 5.5, 10.1];
 
         badColses.forEach((cols) => {
-          expect(() => new BlockyState(10, cols)).toThrow();
+          expect(() => {
+            const options = BlockyState.defaultOptions();
+            options.cols = cols;
+            new BlockyState(options)
+          }).toThrow();
         });
       });
     });
 
     describe('when the number of rows and columns are positive integers', () => {
       test('creates a state with the given number of rows and columns', () => {
-        const rows = 10;
-        const cols = 20;
-        const state = new BlockyState(rows, cols);
+        options.rows = 10;
+        options.cols = 20;
+        const state = new BlockyState(options);
 
-        expect(state.rows).toEqual(rows);
-        expect(state.cols).toEqual(cols);
+        expect(state.rows).toEqual(10);
+        expect(state.cols).toEqual(20);
       });
     });
   });
 
   describe('linesPerLevel', () => {
     describe('when linesPerLevel is a number', () => {
+      let linesPerLevel: number;
+
+      beforeEach(() => {
+        linesPerLevel = 42;
+        options.linesPerLevel = linesPerLevel;
+        state = new BlockyState(options);
+      });
+
       test('returns the number', () => {
-        expect(state.linesPerLevel()).toEqual(BlockyState.DEFAULT_LINES_PER_LEVEL);
+        expect(state.getLinesPerLevel()).toEqual(linesPerLevel);
       });
     });
 
@@ -100,9 +119,10 @@ describe('BlockyState', () => {
       test('returns the result of the function', () => {
         const expectedVal = 42;
         const linesPerLevel = jest.fn(() => expectedVal);
-        const state = new BlockyState(10, 20, BlockyState.DEFAULT_ENTRY_COORD, linesPerLevel);
+        options.linesPerLevel = linesPerLevel;
+        const state = new BlockyState(options);
 
-        expect(state.linesPerLevel()).toEqual(expectedVal);
+        expect(state.getLinesPerLevel()).toEqual(expectedVal);
       });
     });
   });
@@ -480,7 +500,9 @@ describe('BlockyState', () => {
     });
 
     test('copies the row', () => {
-      state = new BlockyState(5, 5);
+      options.rows = 5;
+      options.cols = 5;
+      state = new BlockyState(options);
       [
         0,0,0,0,0,
         1,1,1,1,1,
@@ -521,7 +543,9 @@ describe('BlockyState', () => {
     });
 
     test('clears the given row', () => {
-      state = new BlockyState(5, 5);
+      options.rows = 5;
+      options.cols = 5;
+      state = new BlockyState(options);
 
       [
         0,0,0,0,0,
@@ -572,7 +596,9 @@ describe('BlockyState', () => {
     });
 
     test('returns false', () => {
-      state = new BlockyState(5, 5);
+      options.rows = 5;
+      options.cols = 5;
+      state = new BlockyState(options);
       [
         0,0,0,0,0,
         1,1,1,1,1,

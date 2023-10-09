@@ -15,7 +15,6 @@ import '@vaadin/icons';
 
 const bgColor = '#000';
 
-
 type Props = {
   state?: BlockyState;
   blockSize?: number;
@@ -31,7 +30,7 @@ const defaultProps = {
 };
 
 export default function BlockyBoard(props: Props) {
-  const mergedProps = { ...defaultProps, ...props };
+  const mergedProps = Object.assign({}, defaultProps, props);
   const STATE = mergedProps.state;
   const ROWS = STATE.rows;
   const COLS = STATE.cols;
@@ -45,7 +44,6 @@ export default function BlockyBoard(props: Props) {
   const nextPieceCanvasRef = useRef<HTMLCanvasElement>(null);
   const scoreRef = useRef<HTMLDivElement>(null);
   const levelRef = useRef<HTMLDivElement>(null);
-
 
   const canvasContext = (canvasRef: React.RefObject<HTMLCanvasElement>) => canvasRef.current?.getContext('2d');
 
@@ -212,15 +210,15 @@ export default function BlockyBoard(props: Props) {
     renderBoard();
   };
 
-  const keyListeners = {
+  const keyListenersMap = {
     ArrowLeft: () => game.moveLeft(),
     ArrowRight: () => game.moveRight(),
     ArrowDown: () => game.moveDown(),
     Enter: () => {
       if (STATE.isGameOver) {
-        game.newGame();
+        game.setup();
       } else if (!STATE.hasStarted) {
-        game.start(0, true);
+        game.start();
       } else if (STATE.isPaused) {
         game.resume();
       } else {
@@ -232,11 +230,60 @@ export default function BlockyBoard(props: Props) {
     x: () => game.rotateCounterClockwise(),
   } as { [key: string]: () => any };
 
+  const keyDownListener = (event: KeyboardEvent) => {
+    if (keyListenersMap[event.key]) {
+      keyListenersMap[event.key]();
+      event.preventDefault();
+    }
+  };
+
+  const mapStateToBoard = (): void => {
+    board = STATE.board;
+
+    if (STATE.piece.isActive) {
+      STATE.piece.blockCoords.forEach(
+        (coord: Coord) => board[coord.row * COLS + coord.col] = STATE.piece.shape.value
+      );
+    }
+  };
+
+  const updateLevelLabel = (): void => {
+    levelRef.current!.innerText = `Level\n${STATE.level}`;
+  };
+
+  const updateScoreLabel = (): void => {
+    scoreRef.current!.innerText = `Score\n${STATE.score}`;
+  };
+
+  const onEvent = ((event: BlockyEvent): void => {
+    if (event.name === BlockyEvent.GAME_OVER.name) {
+      console.log(JSON.stringify(event.data.state));
+    }
+
+    if (
+      event.name === BlockyEvent.LEVEL_UPDATE.name ||
+      event.name === BlockyEvent.SCORE_UPDATE.name ||
+      event.name === BlockyEvent.START.name
+    ) {
+      updateLevelLabel();
+      updateScoreLabel();
+    }
+
+		mapStateToBoard();
+		renderBoard();
+    renderNextPiece();
+	}) as EventListener;
+
   useEffect(() => {
+    console.log('BlockyBoard mounted');
+
     const boardCanvas = boardCanvasRef.current;
     if (!boardCanvas) {
       return;
     }
+
+    // TODO pass in options
+    game.setup();
 
     renderBoard();
 
@@ -245,19 +292,17 @@ export default function BlockyBoard(props: Props) {
     boardCanvas.addEventListener('contextmenu', contextMenuListener);
     // boardCanvas.addEventListener('mousemove', mouseMoveListener);
 
+    window.addEventListener('keydown', keyDownListener);
 
-    window.addEventListener('keydown', (event) => {
-      if (keyListeners[event.key]) {
-        keyListeners[event.key]();
-        event.preventDefault();
-      }
-    });
+    BlockyEvent.ALL.forEach((eventName) => game.registerEventListener(eventName, onEvent));
 
     return () => {
       // boardCanvas.removeEventListener('mousedown', mouseListener);
       // boardCanvas.removeEventListener('mouseup', mouseUpListener);
       boardCanvas.removeEventListener('contextmenu', contextMenuListener);
       // boardCanvas.removeEventListener('mousemove', mouseMoveListener);
+      window.removeEventListener('keydown', keyDownListener);
+      game.dispose();
     };
   }, [mergedProps]);
 
@@ -328,47 +373,6 @@ export default function BlockyBoard(props: Props) {
       console.warn('No graphics context to draw block');
     }
   };
-
-  const mapStateToBoard = (): void => {
-    board = STATE.board;
-
-    if (STATE.piece.isActive) {
-      STATE.piece.blockCoords.forEach(
-        (coord: Coord) => board[coord.row * COLS + coord.col] = STATE.piece.shape.value
-      );
-    }
-  };
-
-  const updateLevelLabel = (): void => {
-    levelRef.current!.innerText = `Level\n${STATE.level}`;
-  };
-
-  const updateScoreLabel = (): void => {
-    scoreRef.current!.innerText = `Score\n${STATE.score}`;
-  };
-
-  const onEvent = ((event: BlockyEvent): void => {
-    console.log(`Event: ${event.name}`);
-
-    if (event.name === BlockyEvent.GAME_OVER.name) {
-      console.log(JSON.stringify(event.data.state));
-    }
-
-    if (
-      event.name === BlockyEvent.LEVEL_UPDATE.name ||
-      event.name === BlockyEvent.SCORE_UPDATE.name ||
-      event.name === BlockyEvent.START.name
-    ) {
-      updateLevelLabel();
-      updateScoreLabel();
-    }
-
-		mapStateToBoard();
-		renderBoard();
-    renderNextPiece();
-	}) as EventListener;
-
-  BlockyEvent.ALL.forEach((eventName) => game.registerEventListener(eventName, onEvent));
 
   const labelStyle = {
     font: '16px Roboto Mono',
