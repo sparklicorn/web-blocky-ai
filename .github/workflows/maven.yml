@@ -22,5 +22,13 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        registry-url: https://npm.pkg.github.com/
     - name: Builds pass (JDK 17)
       run: ./mvnw -B package -Pproduction
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}

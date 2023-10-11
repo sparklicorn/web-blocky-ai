@@ -15,6 +15,7 @@
     "@hilla/generator-typescript-utils": "2.1.6",
     "@hilla/react-components": "2.1.5",
     "@polymer/polymer": "3.5.1",
+    "@sparklicorn/testacular-package": "^1.0.0",
     "@vaadin/bundles": "24.1.5",
     "@vaadin/common-frontend": "0.0.18",
     "@vaadin/icon": "24.1.5",
