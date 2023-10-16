@@ -3,6 +3,7 @@ target/
 
 .env
 env.properties
+.npmrc
 
 # The following files are generated/updated by Hilla
 node_modules/
