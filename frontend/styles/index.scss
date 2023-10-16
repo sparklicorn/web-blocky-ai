@@ -1,0 +1,28 @@
+@import "reset";
+
+$background-color: #f5f5f5;
+$link-color: black;
+
+body {
+  background-color: $background-color;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: 16px;
+  font-weight: 600;
+}

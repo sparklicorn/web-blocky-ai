@@ -15,6 +15,7 @@
     "@hilla/generator-typescript-utils": "2.1.6",
     "@hilla/react-components": "2.1.5",
     "@polymer/polymer": "3.5.1",
+    "@types/prop-types": "^15.7.8",
     "@vaadin/bundles": "24.1.5",
     "@vaadin/common-frontend": "0.0.18",
     "@vaadin/icon": "24.1.5",
@@ -28,6 +29,7 @@
     "classnames": "^2.3.2",
     "construct-style-sheets-polyfill": "3.1.0",
     "lit": "2.7.6",
+    "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.4.2"
@@ -51,6 +53,7 @@
     "mkdirp": "1.0.4",
     "rollup-plugin-brotli": "3.1.0",
     "rollup-plugin-visualizer": "5.9.0",
+    "sass": "^1.69.3",
     "strip-css-comments": "5.0.0",
     "transform-ast": "2.4.4",
     "typescript": "5.0.4",
@@ -88,7 +91,9 @@
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
     "@hilla/generator-typescript-plugin-backbone": "$@hilla/generator-typescript-plugin-backbone",
     "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
-    "@hilla/generator-typescript-cli": "$@hilla/generator-typescript-cli"
+    "@hilla/generator-typescript-cli": "$@hilla/generator-typescript-cli",
+    "@types/prop-types": "$@types/prop-types",
+    "prop-types": "$prop-types"
   },
   "vaadin": {
     "dependencies": {
@@ -135,7 +140,7 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "188b9248c5f3653a841b6062687818acf1d9b01223ddd8ed82b02efee82ed0bd"
+    "hash": "a8821bb7effd993703cca36aca91e66ea9e60e563b16a0e5c9905e5966426c17"
   },
   "scripts": {
     "test": "jest"
