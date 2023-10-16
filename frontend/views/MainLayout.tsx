@@ -1,4 +1,5 @@
 import { AppLayout } from '@hilla/react-components/AppLayout';
+import BlockyAiView from './blocky-ai/BlockyAiView';
 // import { DrawerToggle } from '@hilla/react-components/DrawerToggle';
 // import { Item } from '@hilla/react-components/Item';
 // import { Scroller } from '@hilla/react-components/Scroller';
@@ -6,7 +7,6 @@ import { AppLayout } from '@hilla/react-components/AppLayout';
 // import { MenuProps, routes, useViewMatches, ViewRouteObject } from 'Frontend/routes';
 // import { Suspense } from 'react';
 // import { NavLink, Outlet } from 'react-router-dom';
-import BlockyAiView from './blocky-ai/BlockyAiView';
 // import css from './MainLayout.module.css';
 
 // type MenuRoute = ViewRouteObject &
