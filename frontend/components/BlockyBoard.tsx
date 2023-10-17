@@ -1,17 +1,18 @@
 import { useEffect, useRef } from 'react';
-import Blocky from '../blocky/Blocky';
-import { EventListener } from '../event/Event';
-import BlockyEvent from '../blocky/BlockyEvent';
-import Coord from '../structs/Coord';
-import BlockyState from '../blocky/BlockyState';
-import IBlockyGame from '../blocky/IBlockyGame';
-import { bounded } from '../util/Util';
 
 import { HorizontalLayout } from '@hilla/react-components/HorizontalLayout';
 import { Icon } from '@hilla/react-components/Icon';
 import { VerticalLayout } from '@hilla/react-components/VerticalLayout';
 
+import Blocky from '@sparklicorn/bucket-ts/build/blocky/Blocky';
+
 import '@vaadin/icons';
+import IBlockyGame from '@sparklicorn/bucket-ts/build/blocky/IBlockyGame';
+import BlockyState from '@sparklicorn/bucket-ts/build/blocky/BlockyState';
+import BlockyEvent from '@sparklicorn/bucket-ts/build/blocky/BlockyEvent';
+import Coord from '@sparklicorn/bucket-ts/build/structs/Coord';
+import { EventListener } from '@sparklicorn/bucket-ts/build/event/Event';
+import { bounded } from '@sparklicorn/bucket-ts/build/util/Util';
 
 const bgColor = '#000';
 

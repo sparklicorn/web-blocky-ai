@@ -15,6 +15,7 @@
     "@hilla/generator-typescript-utils": "2.1.6",
     "@hilla/react-components": "2.1.5",
     "@polymer/polymer": "3.5.1",
+    "@sparklicorn/bucket-ts": "^0.2.0",
     "@types/prop-types": "^15.7.8",
     "@vaadin/bundles": "24.1.5",
     "@vaadin/common-frontend": "0.0.18",
@@ -93,7 +94,8 @@
     "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
     "@hilla/generator-typescript-cli": "$@hilla/generator-typescript-cli",
     "@types/prop-types": "$@types/prop-types",
-    "prop-types": "$prop-types"
+    "prop-types": "$prop-types",
+    "@sparklicorn/bucket-ts": "$@sparklicorn/bucket-ts"
   },
   "vaadin": {
     "dependencies": {
@@ -140,9 +142,9 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "a8821bb7effd993703cca36aca91e66ea9e60e563b16a0e5c9905e5966426c17"
+    "hash": "6ce0cb7d2ea3e7cd5e61e8b22ec0ef75b6dfaf7456bb96c3c1601ed06f0fff36"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   }
 }

@@ -1,6 +1,8 @@
 import MainLayout from 'Frontend/views/MainLayout.js';
 import { lazy } from 'react';
 import { createBrowserRouter, IndexRouteObject, NonIndexRouteObject, useMatches } from 'react-router-dom';
+import BlockyAiView from './views/blocky-ai/BlockyAiView';
+import EngineView from './views/engine/EngineView';
 
 const AboutView = lazy(async () => import('Frontend/views/about/AboutView.js'));
 export type MenuProps = Readonly<{
@@ -33,6 +35,11 @@ export const routes: readonly ViewRouteObject[] = [
     children: [
       { index: true, element: <MainLayout /> },
       { path: '/about', element: <AboutView /> },
+      { path: '/projects', element: <AboutView /> },
+      { path: '/posts', element: <AboutView /> },
+      { path: '/demos', element: <AboutView /> },
+      { path: '/demos/blocky', element: <BlockyAiView /> },
+      { path: '/demos/engine', element: <EngineView /> },
       { path: '*', element: <MainLayout /> },
     ],
   },
