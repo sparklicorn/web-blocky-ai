@@ -3,7 +3,7 @@ import { createBrowserRouter, IndexRouteObject, NonIndexRouteObject, useMatches 
 import BlockyAiView from './views/blocky-ai/BlockyAiView';
 import EngineView from './views/engine/EngineView';
 import Main from './views/Main';
-// import CircleIntersectionToolView from './views/engine/CircleIntersectionToolView';
+import CircleIntersectionToolView from './views/engine/CircleIntersectionToolView';
 
 const AboutView = lazy(async () => import('Frontend/views/about/AboutView.js'));
 export type MenuProps = Readonly<{
@@ -41,7 +41,7 @@ export const routes: readonly ViewRouteObject[] = [
       { path: '/demos', element: <AboutView /> },
       { path: '/demos/blocky', element: <BlockyAiView /> },
       { path: '/demos/engine', element: <EngineView /> },
-      // { path: '/demos/circle-intersection', element: <CircleIntersectionToolView /> },
+      { path: '/demos/circle-intersection', element: <CircleIntersectionToolView /> },
       { path: '*', element: <Main /> },
     ],
   },
