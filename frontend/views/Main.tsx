@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 
 export const pageHeaderLinks = [
   {
-    icon: 'fa-home',
+    icon: 'fa-solid fa-home',
     href: '/',
   },
   {
@@ -24,19 +24,20 @@ export const pageHeaderLinks = [
     text: 'Demos',
     dropdown: [
       {
-        icon: 'fa-cubes',
+        icon: 'fa-solid fa-cubes',
         text: 'Blocky AI',
         href: '/demos/blocky',
       },
       {
-        icon: 'fa-gears',
+        icon: 'fa-solid fa-gears',
         text: 'Engine',
         href: '/demos/engine',
       },
-      // {
-      //   text: 'Circle Intersection',
-      //   href: '/demos/circle-intersection',
-      // },
+      {
+        icon: 'fa-regular fa-circle',
+        text: 'Circle Intersection',
+        href: '/demos/circle-intersection',
+      },
     ]
   },
 ];
