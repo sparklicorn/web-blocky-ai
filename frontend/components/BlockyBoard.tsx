@@ -1,18 +1,15 @@
 import { useEffect, useRef } from 'react';
 
-import { HorizontalLayout } from '@hilla/react-components/HorizontalLayout';
-import { Icon } from '@hilla/react-components/Icon';
-import { VerticalLayout } from '@hilla/react-components/VerticalLayout';
-
 import Blocky from '@sparklicorn/bucket-ts/build/blocky/Blocky';
 
-import '@vaadin/icons';
 import IBlockyGame from '@sparklicorn/bucket-ts/build/blocky/IBlockyGame';
 import BlockyState from '@sparklicorn/bucket-ts/build/blocky/BlockyState';
 import BlockyEvent from '@sparklicorn/bucket-ts/build/blocky/BlockyEvent';
 import Coord from '@sparklicorn/bucket-ts/build/structs/Coord';
 import { EventListener } from '@sparklicorn/bucket-ts/build/event/Event';
 import { bounded } from '@sparklicorn/bucket-ts/build/util/Util';
+import Page from './Page';
+import { pageFooter, pageHeaderLinks } from 'Frontend/views/Main';
 
 const bgColor = '#000';
 
@@ -375,53 +372,43 @@ export default function BlockyBoard(props: Props) {
     }
   };
 
-  const labelStyle = {
-    font: '16px Roboto Mono',
-    color: '#fff',
-  };
-
   return (
-    <VerticalLayout theme="spacing">
-      <HorizontalLayout theme="spacing">
-        <canvas
-          ref={boardCanvasRef}
-          width={WIDTH}
-          height={HEIGHT}
-          className="border rounded-s border-contrast-50"
-          style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
-        />
-        <canvas
-          ref={nextPieceCanvasRef}
-          width={mergedProps.previewBlockSize * 5}
-          height={mergedProps.previewBlockSize * 4 * mergedProps.previewAmt}
-          style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
-        />
-        <VerticalLayout theme="spacing">
-          <div ref={scoreRef} style={labelStyle}></div>
-          <div ref={levelRef} style={labelStyle}></div>
-        </VerticalLayout>
-      </HorizontalLayout>
-      <VerticalLayout
-        id='controls'
-        theme='spacing padding'
-        className='border rounded-s border-contrast-50'
-        style={labelStyle}
-      >
-        <HorizontalLayout theme='spacing' style={{ width: '100%' }}>
-          <div><strong>Controls</strong></div>
-          <div style={{ flexGrow: 1 }}>
-            <Icon
-              icon="vaadin:close"
-              style={{ color: 'darkred', float: 'right' }}
-              onClick={() => document.getElementById('controls')!.style.display = 'none'}
-            />
+    <Page
+      navLinks={pageHeaderLinks}
+      footer={pageFooter}
+    >
+      <div className='w-full row py4 bg-dark'>
+        <div className='w-half flex-container right'>
+          <canvas
+            ref={boardCanvasRef}
+            width={WIDTH}
+            height={HEIGHT}
+            className="border border-rounded border-light"
+            style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
+          />
+        </div>
+        <div className='w-half ml2 flex-container left'>
+          <canvas
+            ref={nextPieceCanvasRef}
+            width={mergedProps.previewBlockSize * 5}
+            height={mergedProps.previewBlockSize * 4 * mergedProps.previewAmt}
+            style={{ alignSelf: 'start' }} // Prevents the canvas from stretching to fill the parent div
+          />
+
+          <div className='vertical pl2 font-mono font-color-light'>
+            <div ref={scoreRef}></div>
+            <div ref={levelRef}></div>
           </div>
-        </HorizontalLayout>
-        <div>[ <strong>ENTER</strong> ] Start / Pause / Resume</div>
-        <div>[ <strong>ARROW KEYS &#8592; &#8593; &#8594;</strong> ] Move</div>
-        <div>[ <strong>Z, X</strong> ]: Rotate Clockwise, or Counterclockwise</div>
-      </VerticalLayout>
-    </VerticalLayout>
+        </div>
+      </div>
+
+      <div className='vertical m4 p2 border-2 border-rounded-3 shadow' style={{ display: 'inline-flex', flexWrap: 'wrap' }}>
+        <h3>Controls</h3>
+          <div>[ <strong>ENTER</strong> ] Start / Pause / Resume</div>
+          <div>[ <strong>ARROW KEYS &#8592; &#8593; &#8594;</strong> ] Move</div>
+          <div>[ <strong>Z, X</strong> ]: Rotate Clockwise, Counterclockwise</div>
+      </div>
+    </Page>
   );
 }
 

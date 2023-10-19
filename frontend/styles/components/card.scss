@@ -1,0 +1,36 @@
+.card {
+  display: inline-flex;
+  flex-direction: column;
+  row-gap: 8px;
+
+  padding: 8px;
+  border-radius: 8px;
+  background-color: #ffffff;
+
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
+
+  div {
+    display: flex;
+  }
+
+  .card-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    column-gap: 8px;
+
+    @include flex-horizontal-alignments;
+  }
+
+  .card-content {
+    display: flex;
+
+    @include flex-horizontal-alignments;
+  }
+
+  .card-footer {
+    display: flex;
+
+    @include flex-horizontal-alignments;
+  }
+}
