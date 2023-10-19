@@ -30,9 +30,10 @@
       "Frontend/*": ["*"]
     }
   },
+  "files": ["node_modules/jest-expect-message/types/index.d.ts"],
   "include": [
     "frontend/**/*",
-    "types.d.ts"
+    "types.d.ts",
   ],
   "exclude": [
     "frontend/generated/jar-resources/**"

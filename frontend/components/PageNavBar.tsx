@@ -14,7 +14,7 @@ export default function PageNavBar(props: InferProps<typeof PageNavBar.propTypes
     return (
       <div key={ index } className='nav-link dropdown'>
         <a className='nav-link-content'>
-          { link.icon && <i className={classNames('fa-solid', link.icon)}></i> }
+          { link.icon && <i className={link.icon}></i> }
           { link.text }
         </a>
         <div className='dropdown-content'>
@@ -32,7 +32,7 @@ export default function PageNavBar(props: InferProps<typeof PageNavBar.propTypes
         href={ link.href }
       >
         <div className='nav-link-content'>
-          { link.icon && <i className={classNames('fa-solid', link.icon)}></i> }
+          { link.icon && <i className={link.icon}></i> }
           { link.text }
         </div>
       </a>
